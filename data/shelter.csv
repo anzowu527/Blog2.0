@@ -1,0 +1,42 @@
+Platform,Type,Name,Breed,Sex,Species,Spray/Neuter,Arrival Date,Departure Date,Duration,Price,Payment Received,daily price,tips,months_active,Family Members,Notes
+shelter,Boarding,Bart,Labrador,Male,Dog,No,7-Nov-2024,8-Nov-2024,1,30,30,,,,,
+shelter,Boarding,Booberry,Husky,Female,Dog,Yes,9-Nov-2024,23-Nov-2024,14,300,300,,,,,
+shelter,Boarding,Obi,Pit Bull,Male,Dog,No,10-Nov-2024,24-Nov-2024,14,300,300,,,,,
+shelter,Boarding,Tennessee,Alaskan,Male,Dog,No,13-Nov-2024,14-Nov-2024,1,23,23,,,,,
+shelter,Boarding,Canada,Pit Bull,Male,Dog,No,16-Nov-2024,25-Nov-2024,14,300,300,,,,,
+shelter,Boarding,Fury,German Shepherd,Female,Dog,No,21-Nov-2024,26-Feb-2025,78,1950,1950,,,,,6w4d
+shelter,Boarding,Suki,German Shepherd,Female,Dog,Yes,23-Nov-2024,3-Dec-2024,10,300,300,,,,,
+shelter,Boarding,Stitch,Pit Bull,Male,Dog,No,24-Nov-2024,24-Nov-2024,1,100,100,,,,,
+shelter,Boarding,Honey,Mixed,Female,Dog,No,27-Nov-2024,1-Dec-2024,4,100,100,,,,,
+shelter,Boarding,Zoe,Mixed,Female,Dog,No,27-Nov-2024,1-Dec-2024,4,100,100,,,,,
+shelter,Boarding,Honeydew,Labrador,Male,Dog,No,30-Nov-2024,1-Dec-2024,1,25,25,,,,,
+shelter,Boarding,Zoe,Mixed,Female,Dog,No,1-Dec-2024,15-Dec-2024,14,300,300,,,,,
+shelter,Boarding,Jafar,Mixed,Male,Dog,Yes,3-Dec-2024,7-Dec-2024,4,92,92,,,,,一天23
+shelter,Boarding,Eva,Husky,Female,Dog,Yes,3-Dec-2024,7-Dec-2024,4,92,92,,,,,一天23
+shelter,Boarding,Naomi,Border Collie,Female,Dog,Yes,3-Dec-2024,7-Dec-2024,4,92,92,,,,,一天23
+shelter,Boarding,Rex,German Shepherd,Male,Dog,Yes,3-Dec-2024,7-Dec-2024,4,92,92,,,,,一天23
+shelter,Boarding,BrotherPup,Pit Bull,Male,Dog,No,3-Dec-2024,5-Dec-2024,1,100,100,,,,,
+shelter,Boarding,Bonnie,Pit Bull,Female,Dog,No,5-Dec-2024,7-Dec-2024,2,50,50,,,,,
+shelter,Boarding,Baron,Pit Bull,Male,Dog,No,5-Dec-2024,7-Dec-2024,2,50,50,,,,,
+shelter,Boarding,Penny,Pit Bull,Female,Dog,No,7-Dec-2024,21-Dec-2024,13,325,325,,,,,
+shelter,Boarding,Evan,Husky,Female,Dog,No,7-Dec-2024,12-Dec-2024,5,100,100,,,,,
+shelter,Boarding,Lilac,Husky,Female,Dog,Yes,8-Dec-2024,21-Dec-2024,13,320,320,,,,,
+shelter,Boarding,Duke,Pit Bull,Male,Dog,No,9-Dec-2024,13-Feb-2025,3,1480,1205,,,,,
+shelter,Boarding,Tommy,Mixed,Male,Dog,No,9-Dec-2024,13-Feb-2025,12,1480,1205,,,,,
+shelter,Boarding,King,German Shepherd,Male,Dog,No,10-Dec-2024,6-Jan-2025,27,575,575,,,,,3w6d
+shelter,Boarding,Willow,German Shepherd,Female,Dog,No,12-Dec-2024,14-Dec-2024,2,50,50,,,,,
+shelter,Boarding,Chloe,Husky,Female,Dog,No,12-Dec-2024,14-Dec-2024,2,50,50,,,,,
+shelter,Boarding,Annabelle,Meltese,Female,Dog,No,12-Dec-2024,14-Dec-2024,2,50,50,,,,,
+shelter,Boarding,Zoe,Mixed,Female,Dog,No,15-Dec-2024,13-Feb-2025,60,1300,1000,,,,,8w4d
+shelter,Boarding,Penny,Pit Bull,Female,Dog,No,21-Dec-2024,19-Jan-2025,21,675,675,,,,,
+shelter,Boarding,Dax,Rottweiler,Male,Dog,No,23-Dec-2024,20-Jan-2025,25,575,575,,,,,
+shelter,Boarding,Cassian,German Shepherd,Male,Dog,Yes,24-Dec-2024,26-Feb-2025,70,1500,1500,,,,,
+shelter,Boarding,Conrad,German Shepherd,Male,Dog,No,19-Feb-2025,22-Feb-2025,4,100,100,,,,,
+shelter,Boarding,Nessa,Husky,Female,Dog,No,5-Apr-2025,21-Apr-2025,16,400,400,,,,,
+shelter,Boarding,Tapi,Labrador,Female,Dog,No,1-Apr-2025,5-Apr-2025,4,100,100,,,,,
+shelter,Boarding,Kelce,German Shepherd,Female,Dog,No,1-Apr-2025,5-Apr-2025,4,75,75,,,,,
+shelter,Boarding,Lauryn,Husky,Female,Dog,No,12-Apr-2025,21-Apr-2025,10,250,275,,,,,
+shelter,Boarding,Daisy,Husky,Female,Dog,No,9-Apr-2025,17-Apr-2025,9,225,225,,,,,
+shelter,Boarding,Emma,Husky,Female,Dog,Yes,11-Apr-2025,21-Apr-2025,11,275,275,,,,,
+shelter,Boarding,Valentina,Husky,Female,Dog,No,11-Apr-2025,21-Apr-2025,11,275,275,,,,,
+shelter,Boarding,Lady,Husky,Female,Dog,No,3-Jul-2025,13-Jul-2025,10,250,250,,,,,

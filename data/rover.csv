@@ -1,0 +1,58 @@
+Platform,Type,Name,Breed,Sex,Species,Spray/Neuter,Arrival Date,Departure Date,Duration,Price,Payment Received,Family Members,Notes
+Rover,Drop In,Sophie,Domestic Short,Female,Cat,Yes,22-Jun-2024,23-Jun-2024,2,42,42,,
+Rover,Drop In,Delia,Domestic Short,Female,Cat,Yes,29-Jun-2024,1-Jul-2024,4,140,140,,
+Rover,Drop In,Moomoo,Domestic Short,Male,Cat,Yes,1-Jul-2024,5-Jul-2024,3,64,64,,
+Rover,Drop In,Sophie,Domestic Short,Female,Cat,Yes,4-Jul-2024,8-Jul-2024,5,150,150,,
+Rover,Boarding,Migo,Chihuahua,Male,Dog,Yes,9-Jul-2024,10-Jul-2024,1,44,44,Draco/Indigo,
+Rover,Boarding,Draco,Domestic Short,Male,Cat,Yes,9-Jul-2024,10-Jul-2024,1,44,44,Migo/Indigo,
+Rover,Boarding,Indigo,Domestic Short,Female,Cat,Yes,9-Jul-2024,10-Jul-2024,1,44,44,Migo/Draco,
+Rover,Drop In,Moomoo,Domestic Short,Male,Cat,Yes,7-Jul-2024,13-Jul-2024,4,93,93,,
+Rover,Boarding,Marty,Domestic Short,Male,Cat,Yes,7-Jul-2024,14-Jul-2024,7,378,376.6,,
+Rover,Boarding,Milo,Golden Doodle,Male,Dog,Yes,18-Jul-2024,19-Jul-2024,1,40,40,,
+Rover,Drop In,Moomoo,Domestic Short,Male,Cat,Yes,14-Jul-2024,20-Jul-2024,4,80,80,,
+Rover,Boarding,Shanti,Domestic Long,Female,Cat,Yes,18-Jul-2024,21-Jul-2024,4,50,50,,
+Rover,Boarding,Migo,Chihuahua,Male,Dog,Yes,16-Jul-2024,24-Jul-2024,8,212.6,212.6,Draco/Indigo,
+Rover,Boarding,Draco,Domestic Short,Male,Cat,Yes,16-Jul-2024,24-Jul-2024,8,212.6,212.6,Migo/Indigo,
+Rover,Boarding,Indigo,Domestic Short,Female,Cat,Yes,16-Jul-2024,24-Jul-2024,8,212.6,212.6,Migo/Draco,
+Rover,Boarding,Oreo,Domestic Short,Female,Cat,Yes,16-Jul-2024,24-Jul-2024,8,173,173,Nacho,
+Rover,Boarding,Nacho,Domestic Short,Male,Cat,Yes,16-Jul-2024,24-Jul-2024,8,173,173,Oreo,
+Rover,Drop In,Moomoo,Domestic Short,Male,Cat,Yes,21-Jul-2024,27-Jul-2024,4,80,80,,
+Rover,Drop In,Moomoo,Domestic Short,Male,Cat,Yes,28-Jul-2024,3-Aug-2024,5,100,100,,
+Rover,Drop In,Molly,Miniature Schnauzer,Female,Dog,Yes,1-Aug-2024,4-Aug-2024,7,84.6,84.6,Nyxey/Penny,
+Rover,Drop In,Penny,Cavalier King,Female,Dog,Yes,1-Aug-2024,4-Aug-2024,7,84.6,84.6,Nyxey/Molly,
+Rover,Boarding,Django,Domestic Short,Male,Cat,Yes,28-Jul-2024,4-Aug-2024,7,238,250,,
+Rover,Drop In,Nyxey,Domestic Short,Female,Cat,Yes,1-Aug-2024,4-Aug-2024,7,84.6,84.6,Molly/Penny,
+Rover,Drop In,Moomoo,Domestic Short,Male,Cat,Yes,4-Aug-2024,10-Aug-2024,5,80,100,,
+Rover,Drop In,Moomoo,Domestic Short,Male,Cat,Yes,11-Aug-2024,17-Aug-2024,5,100,100,,
+Rover,Boarding,Migo,Chihuahua,Male,Dog,Yes,16-Aug-2024,18-Aug-2024,2,67.5,67.5,Migo,
+Rover,Boarding,Draco,Domestic Short,Male,Cat,Yes,16-Aug-2024,18-Aug-2024,2,67.5,67.5,Draco,
+Rover,Boarding,Easton,Chihuahua,Male,Dog,Yes,4-Aug-2024,23-Aug-2024,19,700,700,,
+Rover,Boarding,Mimi,Siamese,Female,Cat,Yes,30-Jul-2024,26-Aug-2024,27,666.6,666.6,Bruce/Abby,
+Rover,Boarding,Bruce,Siamese,Male,Cat,Yes,30-Jul-2024,26-Aug-2024,27,666.6,666.6,Mimi/Abby,
+Rover,Boarding,Abby,Siamese,Female,Cat,Yes,30-Jul-2024,26-Aug-2024,27,666.6,666.6,Bruce/Mimi,
+Rover,Boarding,Onami,Miniature Poodle,Male,Dog,Yes,29-Aug-2024,29-Aug-2024,1天,30,30,,
+Rover,Boarding,rick,Domestic Short,Male,Cat,Yes,9-Sep-2024,13-Sep-2024,5天,125,125,,
+Rover,Boarding,Brody,Wire Fox Terrior,Male,Dog,Yes,12-Sep-2024,15-Sep-2024,4,140,140,,
+Rover,Boarding,Milo,Domestic Short,Male,Cat,Yes,15-Sep-2024,15-Sep-2024,1,34,40.45,,6.45 tips
+Rover,Boarding,Boston,Miniature Poodle,Male,Dog,Yes,26-Sep-2024,26-Sep-2024,1,35,40,,一天35，5块小费
+Rover,Boarding,Clarice,Domestic Long,Female,Cat,Yes,15-Oct-2024,15-Oct-2024,1,30,50,,一天30，20小费
+Rover,Boarding,Coco,Meltese,Female,Dog,Yes,6-Nov-2024,10-Nov-2024,4,140,125,,一天35
+Rover,Boarding,Brody,Wire Fox Terrior,Male,Dog,Yes,8-Nov-2024,10-Nov-2024,3,105,105,,一天35
+Rover,Boarding,Laffy,Jack Russel Terrier,Male,Dog,Yes,10-Nov-2024,10-Nov-2024,1,35,47,,35+12小费
+Rover,Boarding,Bella,Domestic Long,Female,Cat,Yes,21-Nov-2024,21-Nov-2024,1,25,30,,一天25+5小费
+Rover,Boarding,Coco,Meltese,Female,Dog,Yes,21-Nov-2024,24-Nov-2024,3,105,105,,一天35
+Rover,Boarding,Cotton,Corgi,Female,Dog,Yes,26-Nov-2024,29-Nov-2024,3,129,145.2,,一天43，小费16
+Rover,Boarding,Bentley,Corgi,Male,Dog,Yes,28-Nov-2024,30-Nov-2024,2,86,104,,一天43，小费20
+Rover,Boarding,Oliver,Mixed,Male,Dog,Yes,29-Nov-2024,1-Dec-2024,3,150,150.5,,
+Rover,Boarding,Ivy,Domestic Short,Female,Cat,Yes,26-Nov-2024,1-Dec-2024,5,215,214,,43一天
+Rover,Boarding,Dio,Domestic Short,Male,Cat,Yes,27-Nov-2024,1-Dec-2024,5,215,235,,一天43，小费20
+Rover,Boarding,Rosie,Mixed,Female,Dog,Yes,1-Dec-2024,6-Dec-2024,5,240,240,,一天48，我涨价了+holiday rate
+Rover,Boarding,Dobby,Chihuahua,Male,Dog,Yes,22-Dec-2024,26-Dec-2024,4,134,134,Athena,
+Rover,Boarding,Athena,Siberian,Female,Cat,Yes,22-Dec-2024,26-Dec-2024,4,134,134,Dobby,
+Rover,Boarding,Melody,Domestic Short,Female,Cat,Yes,23-Dec-2024,30-Dec-2024,7,300,288,,一天43，holiday rate+ tip8
+Rover,Boarding,Murphy,Chihuahua,Female,Dog,Yes,30-Dec-2025,2-Jan-2025,3,228,183,,
+Rover,Boarding,Butcher,Meltese,Male,Dog,Yes,24-Jan-2025,25-Jan-2025,1,112,112,,
+Rover,Boarding,Oliver,Mixed,Male,Dog,Yes,30-May-2025,2-Jun-2025,3,245,245,,
+Rover,Boarding,Brody,Wire Fox Terrior,Male,Dog,Yes,31-May-2025,3-Jun-2025,3,85,85,,
+Rover,Boarding,Romeo,Poodle,Male,Dog,Yes,10-Jul-2025,15-Jul-2025,5,198,298,,
+Rover,Boarding,Ivy,Domestic Long,Female,Cat,Yes,3-Jul-2025,7-Jul-2025,4,350,350,,

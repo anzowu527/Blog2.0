@@ -1,0 +1,175 @@
+Platform,Type,Name,Breed,Sex,Species,Spray/Neuter,Arrival Date,Departure Date,Duration,Price,Payment Received,Family Members,Notes
+xhs,Boarding,Appa,Maltese Mixed,Male,Dog,no,16/06/2024,21/06/2024,6,210,210.00,,一天25
+xhs,Boarding,麻薯,Pomeranian,Female,Dog,yes,22/06/2024,01/07/2024,10,172.6,172.60,福来/小七,
+xhs,Boarding,福来,Domestic Short,Female,Cat,yes,22/06/2024,01/07/2024,10,172.6,172.60,麻薯/小七,
+xhs,Boarding,小七,Domestic Short,Male,Cat,yes,22/06/2024,01/07/2024,10,172.6,172.60,福来/麻薯,
+xhs,Boarding,栗子,Golden Retriever,Female,Dog,yes,06/07/2024,08/07/2024,3,105,105.00,,一天35
+xhs,Boarding,果果,Corgi,Male,Dog,no,28/06/2024,10/08/2024,45,1000,"1,040.00",,一个月650，单天35
+xhs,Drop In,Moomoo,Domestic Short,Male,Cat,yes,17/08/2024,22/08/2024,3,60,60.00,,
+xhs,Boarding,Shyshy,Shiba Inu,Female,Dog,yes,09/06/2024,25/08/2024,77,1800,"1,520.00",,一个月600，多的一天23
+xhs,Boarding,Kia,Pomsky,Female,Dog,yes,27/06/2024,26/08/2024,60,1200,"1,200.00",,一个月600
+xhs,Boarding,Noel,Domestic Long,Male,Cat,yes,03/07/2024,26/08/2024,54,910,910.00,,一个月550，多的一天15
+xhs,Boarding,奶茶,Abyssinian,Female,Cat,yes,13/07/2024,25/09/2024,73,1250,"1,250.00",,一个月500，单天22
+xhs,Boarding,Melo,Shiba Inu,Male,Dog,yes,18/09/2024,30/09/2024,13,455,455.00,,一天35
+xhs,Boarding,Cocoa,Cavapoo,Female,Dog,no,05/10/2024,09/10/2024,5,175,175.00,,一天35
+xhs,Boarding,Archie,Berne Doodle,Male,Dog,yes,12/11/2024,12/11/2024,1,20,20.00,Luna/Brownie,一天60，三只首次优惠
+xhs,Boarding,Luna,Australian Shepherd,Female,Dog,yes,12/11/2024,12/11/2024,1,20,20.00,Brownie/Archie,一天60，三只首次优惠
+xhs,Boarding,Brownie,Dachshund Long,Male,Dog,no,12/11/2024,12/11/2024,1,20,20.00,Archie/Luna,一天60，三只首次优惠
+xhs,Boarding,Shyshy,Shiba Inu,Female,Dog,yes,21/11/2024,26/11/2024,5,140,140.00,,一天28
+xhs,Boarding,Dutch,Dachshund Long,Male,Dog,no,18/11/2024,01/12/2024,14,380,380.00,,一天30，第一次打点儿折
+xhs,Boarding,Momo,Maltese,Female,Dog,yes,26/11/2024,01/12/2024,5,150,150.00,,一天30
+xhs,Boarding,Melo,Shiba Inu,Male,Dog,yes,28/11/2024,01/12/2024,3,105,105.00,,一天35
+xhs,Boarding,歇歇,Bichon Frise,Female,Dog,yes,30/11/2024,02/12/2024,2,60,80.00,,"一天30, 20车费"
+xhs,Boarding,豆豆,British Short,Male,Cat,yes,09/11/2024,04/12/2024,23,300,300.00,牛牛,一天26
+xhs,Boarding,牛牛,Siamese,Male,Cat,yes,09/11/2024,04/12/2024,23,300,300.00,豆豆,一天26
+xhs,Boarding,派派,Akita Inu,Male,Dog,yes,18/11/2024,07/12/2024,20,700,750.00,,一天35，多给50
+xhs,Boarding,Gigi,British Short,Female,Cat,yes,25/11/2024,13/12/2024,18,305,305.00,Tobi,一周170，两只打折，+11天（30一天）
+xhs,Boarding,Tobi,British Short,Male,Cat,no,25/11/2024,13/12/2024,18,305,305.00,Gigi,一周170，两只打折，+11天（30一天）
+xhs,Boarding,条条,Berne Doodle,Male,Dog,yes,04/12/2024,14/12/2024,9.5,617.5,618.00,,一天65，一对一
+xhs,Boarding,波妞,Cavapoo,Female,Dog,no,16/12/2024,19/12/2024,4,120,120.00,,一天30
+xhs,Boarding,Summer,Cavapoo,Female,Dog,no,04/12/2024,28/12/2024,24,700,700.00,,一个月700
+xhs,Boarding,Archie,Berne Doodle,Male,Dog,yes,21/12/2024,28/12/2024,7,175,175.00,Luna/Brownie,
+xhs,Boarding,Luna,Australian Shepherd,Female,Dog,yes,21/12/2024,28/12/2024,7,175,175.00,Brownie/Archie,
+xhs,Boarding,Brownie,Dachshund Long,Male,Dog,no,21/12/2024,28/12/2024,7,175,175.00,Archie/Luna,一天一共3只75
+xhs,Boarding,Opao,Yorkie,Male,Dog,no,25/12/2024,28/12/2024,3,75,75.00,,
+xhs,Boarding,Cookie,Yorkie,Male,Dog,no,25/12/2024,28/12/2024,3,75,75.00,,
+xhs,Boarding,Baggie,Cavapoo,Male,Dog,no,20/12/2024,29/12/2024,10,300,300.00,,一天30
+xhs,Boarding,Madi,Cavapoo,Female,Dog,no,27/12/2024,31/12/2024,4,120,130.00,,一天30
+xhs,Boarding,布丁1,Bichon Frise,Female,Dog,yes,24/12/2024,01/01/2025,8,240,240.00,Mocha,一天60
+xhs,Boarding,Mocha,Maltese Mixed,Male,Dog,no,24/12/2024,01/01/2025,8,240,240.00,布丁,一天60
+xhs,Boarding,皮皮,Domestic Short,Male,Cat,yes,28/12/2024,01/01/2025,5,125,125.00,,一天25
+xhs,Boarding,Cotton,Corgi,Female,Dog,yes,29/12/2024,02/01/2025,4,160,180.00,,一天40+小费
+xhs,Boarding,RiceBall,Ragdoll,Male,Cat,yes,28/12/2024,04/01/2025,7,154,182.00,,一天22+小费
+xhs,Boarding,奶茶,Abyssinian,Female,Cat,yes,28/12/2024,04/01/2025,7,154,182.00,,一天22+小费
+xhs,Boarding,布丁,Shiztu Poodle,Female,Dog,yes,17/12/2024,05/01/2025,20,550,566.66,,一天30，打50块折
+xhs,Boarding,咪豆,Border Collie,Male,Dog,no,20/12/2024,06/01/2025,18,720,720.00,,一天45
+xhs,Boarding,Shyshy,Shiba Inu,Female,Dog,yes,09/12/2024,08/01/2025,30,728,728.00,,一天28
+xhs,Boarding,Nato,Shiba Inu,Male,Dog,no,22/12/2024,08/01/2025,17,595,595.00,,一天35
+xhs,Boarding,拉拉,Dachshund Short,Female,Dog,no,14/12/2024,11/01/2025,28,700,700.00,,700一个月
+xhs,Boarding,Mars,Domestic Short,Male,Cat,yes,18/12/2024,12/01/2025,26,525,525.00,,一周160，单天15
+xhs,Boarding,旮豆,British Short,Female,Cat,yes,17/12/2024,13/01/2025,27,366.6,366.60,小佐/挖泥,一个月550，算两只猫的价格
+xhs,Boarding,小佐,Domestic Long,Female,Cat,no,17/12/2024,13/01/2025,27,366.6,366.60,旮豆/小佐,一个月550，算两只猫的价格
+xhs,Boarding,挖泥,British Short,Female,Cat,yes,17/12/2024,13/01/2025,27,366.6,366.60,旮豆/挖泥,一个月550，算两只猫的价格
+xhs,Boarding,Eddie,Shiba Inu,Male,Dog,yes,12/01/2025,16/01/2025,5,200,200.00,,一天40，小费40
+xhs,Boarding,皮皮,Domestic Short,Male,Cat,yes,12/01/2025,16/01/2025,5,125,115.00,,一天25
+xhs,Boarding,Dutch,Dachshund Long,Male,Dog,no,17/01/2025,20/01/2025,3,90,90.00,,一天30
+xhs,Boarding,泡菜,Maltese Mixed,Male,Dog,yes,23/01/2025,25/01/2025,2.5,75,75.00,,一天30
+xhs,Boarding,Lily,Domestic Long,Female,Cat,yes,29/12/2024,27/01/2025,28,550,550.00,,noel 妈妈refer
+xhs,Boarding,Madi,Cavapoo,Male,Dog,no,24/01/2025,27/01/2025,3,90,100.00,,
+xhs,Boarding,Tora,Maine Coon,Female,Cat,yes,28/08/2024,28/01/2025,150,2888,"2,888.00",,一个月550，多的一天15
+xhs,Boarding,Momo,Maltese,Female,Dog,yes,27/01/2025,02/02/2025,6,180,180.00,,一天30
+xhs,Drop In,丸丸,Domestic Short,Male,Cat,yes,24/01/2025,07/02/2025,5,50,50.00,米米,上门一次20
+xhs,Drop In,米米,Domestic Short,Female,Cat,yes,24/01/2025,07/02/2025,5,50,50.00,丸丸,上门一次20
+xhs,Boarding,Cotton,Corgi,Female,Dog,yes,25/01/2025,15/02/2025,22,880,920.00,,一天40，小费40
+xhs,Boarding,Mason,Shiba Inu,Male,Dog,yes,17/01/2025,17/02/2025,31,1450,"1,450.00",Turbo,一天50
+xhs,Boarding,Turbo,Corgi,Male,Dog,yes,17/01/2025,17/02/2025,31,1450,"1,450.00",Mason,一天50
+xhs,Boarding,Kendrick,Shiba Inu,Male,Dog,yes,14/02/2025,17/02/2025,4,160,200.00,,一天40
+xhs,Boarding,Kylie,Aussie Doodle,Female,Dog,no,12/02/2025,18/02/2025,6,330,330.00,,1v1 一天55
+xhs,Boarding,Momo,Maltese,Female,Dog,yes,14/02/2025,18/02/2025,5,150,150.00,,一天35
+xhs,Boarding,Madi,Cavapoo,Female,Dog,no,14/02/2025,18/02/2025,3,90,100.00,,一天30
+xhs,Boarding,Luna,Australian Shepherd,Female,Dog,yes,06/03/2025,09/03/2025,4,140,140.00,,
+xhs,Boarding,Archie,Berne Doodle,Male,Dog,yes,06/03/2025,09/03/2025,4,140,140.00,,
+xhs,Boarding,Madi,Cavapoo,Female,Dog,no,08/03/2025,09/03/2025,2,60,65.00,,
+xhs,Boarding,布丁,Shiztu Poodle,Female,Dog,yes,10/03/2025,11/03/2025,2,60,60.00,,
+xhs,Boarding,Money,Shiba Inu,Male,Dog,yes,13/03/2025,16/03/2025,4,160,160.00,,一天40
+xhs,Boarding,条条,Berne Doodle,Female,Dog,yes,14/03/2025,21/03/2025,7,350,350.00,,一天50
+xhs,Boarding,Opao,Yorkie,Male,Dog,no,15/03/2025,23/03/2025,9,270,270.00,,一天30，没绝育
+xhs,Boarding,歇歇,Bichon Frise,Female,Dog,yes,20/03/2025,23/03/2025,3,100,100.00,,
+xhs,Boarding,依依,Schnauzer,Female,Dog,no,18/03/2025,24/03/2025,7,210,210.00,,一天30，没绝育
+xhs,Boarding,噗噗,French Bulldog,Male,Dog,no,19/03/2025,25/03/2025,6,240,240.00,,三岁，没绝育，一天40
+xhs,Boarding,布丁1,Bichon Frise,Female,Dog,yes,21/03/2025,30/03/2025,9,270,270.00,,
+xhs,Boarding,Mocha,Maltese Mixed,Male,Dog,no,21/03/2025,30/03/2025,9,270,270.00,,
+xhs,Boarding,Emily,Maltese,Female,Dog,yes,30/03/2025,04/04/2025,6,180,180.00,,"一天30, 绝育"
+xhs,Boarding,Toffee,Dachshund Long,Female,Dog,no,28/03/2025,05/04/2025,8,440,440.00,,1v1，55一天，未绝育
+xhs,Boarding,噗噗,French Bulldog,Male,Dog,no,02/04/2025,08/04/2025,6,240,240.00,,三岁，没绝育，一天40
+xhs,Boarding,Kylie,Aussie Doodle,Female,Dog,no,01/04/2025,13/04/2025,9,455,455.00,,35一天
+xhs,Boarding,Angus,Aussie Doodle,Male,Dog,yes,10/04/2025,14/04/2025,4,180,200.00,,45一天
+xhs,Boarding,Archie,Berne Doodle,Male,Dog,yes,18/04/2025,21/04/2025,3,105,105.00,Luna/Brownie,一天一共2只70
+xhs,Boarding,Luna,Australian Shepherd,Female,Dog,yes,18/04/2025,21/04/2025,3,105,105.00,Brownie/Archie,一天一共2只70
+xhs,Boarding,安安,Husky,Male,Dog,yes,17/04/2025,22/04/2025,5,325,325.00,,一天65
+xhs,Boarding,Pangky,Shiba Inu,Male,Dog,no,17/04/2025,23/04/2025,5.5,250,250.00,Pangda,1v2，90一天
+xhs,Boarding,Pangda,Shiba Inu,Female,Dog,no,17/04/2025,23/04/2025,5.5,250,250.00,Pangky,1v2，90一天
+xhs,Boarding,Gigi,British Short,Female,Cat,yes,10/04/2025,26/04/2025,16,260,285.00,Tobi,两只一天30+路费
+xhs,Boarding,Tobi,British Short,Male,Cat,no,10/04/2025,26/04/2025,16,260,285.00,Gigi,两只一天30+路费
+xhs,Boarding,椰椰,Bichon Frise,Female,Dog,yes,03/03/2025,27/04/2025,58,1160,"1,160.00",,四岁多，绝育
+xhs,Boarding,依依,Schnauzer,Female,Dog,no,26/04/2025,29/04/2025,4,120,120.00,,
+xhs,Boarding,Archie,Berne Doodle,Male,Dog,yes,23/04/2025,03/05/2025,10,250,250.00,Luna/Brownie,一天一共3只80
+xhs,Boarding,Luna,Australian Shepherd,Female,Dog,yes,23/04/2025,03/05/2025,10,250,250.00,Brownie/Archie,一天一共3只80
+xhs,Boarding,Brownie,Dachshund Long,Male,Dog,no,23/04/2025,03/05/2025,10,250,250.00,Archie/Luna,一天一共3只80
+xhs,Boarding,Rolie,French Bulldog,Male,Dog,no,05/05/2025,05/05/2025,1,35,35.00,Millie,一天45
+xhs,Boarding,Millie,French Bulldog,Male,Dog,no,05/05/2025,05/05/2025,1,35,35.00,Rolie,一天45
+xhs,Boarding,Bubble,American Short,Male,Cat,yes,21/12/2024,10/05/2025,139,1750,"1,750.00",,一个月450
+xhs,Boarding,Rocket,American Short,Male,Cat,yes,21/12/2024,10/05/2025,139,1750,"1,750.00",,两只一个月800
+xhs,Boarding,Madi,Cavapoo,Female,Dog,yes,09/05/2025,12/05/2025,3,90,100.00,,一天30
+xhs,Boarding,Opao,Yorkie,Male,Dog,no,09/05/2025,14/05/2025,5,150,150.00,,
+xhs,Boarding,Dutch,Dachshund Long,Male,Dog,yes,10/05/2025,19/05/2025,9,270,270.00,,一天30
+xhs,Boarding,辛巴,Poodle,Male,Dog,yes,14/05/2025,19/05/2025,5,150,150.00,,一天30
+xhs,Boarding,帅哥,Schnauzer,Male,Dog,no,15/05/2025,19/05/2025,4,200,200.00,,急单加钱
+xhs,Boarding,Mocha1,Yorkie,Male,Dog,yes,15/05/2025,19/05/2025,4,120,120.00,,
+xhs,Boarding,依依,Schnauzer,Female,Dog,no,16/05/2025,21/05/2025,6,180,180.00,,
+xhs,Boarding,Opao,Yorkie,Male,Dog,no,18/05/2025,21/05/2025,2,60,60.00,,
+xhs,Boarding,雪哈,Husky,Female,Dog,yes,09/05/2025,23/05/2025,14,300,300.00,,一周150
+xhs,Boarding,Tobi,British Short,Male,Cat,no,30/04/2025,24/05/2025,24,360,360.00,,两只一天30
+xhs,Boarding,Gigi,British Short,Female,Cat,yes,30/04/2025,24/05/2025,24,360,360.00,,两只一天30
+xhs,Boarding,Rolie,French Bulldog,Male,Dog,no,10/05/2025,25/05/2025,15,675,675.00,Millie,一天45
+xhs,Boarding,Millie,French Bulldog,Male,Dog,no,10/05/2025,25/05/2025,15,675,675.00,Rolie,一天45
+xhs,Boarding,胖虎,Shiba Inu,Male,Dog,no,15/05/2025,26/05/2025,11,330,330.00,,一天30，未绝育
+xhs,Boarding,Kendrick,Shiba Inu,Male,Dog,yes,24/05/2025,26/05/2025,3,135,165.00,,一天45
+xhs,Boarding,Wolfie,French Bulldog,Male,Dog,yes,19/05/2025,27/05/2025,8,360,360.00,,新客人小小打折，45一天
+xhs,Boarding,Liberty,Dachshund Long,Female,Dog,yes,21/05/2025,01/06/2025,11,330,380.00,,
+xhs,Boarding,Pico,Bengal,Male,Cat,yes,03/05/2025,03/06/2025,30,550,550.00,,
+xhs,Boarding,皮卡丘,poodle mix,Male,Dog,yes,22/05/2025,08/06/2025,17,500,500.00,,新客两只8折+抹零
+xhs,Boarding,屁屁,Corgi,Male,Dog,no,22/05/2025,08/06/2025,17,500,500.00,,新客两只8折+抹零
+xhs,Boarding,Kendrick,Shiba Inu,Male,Dog,yes,02/06/2025,08/06/2025,6,270,320.00,,
+xhs,Boarding,米浆,Siamese,Male,Cat,yes,06/06/2025,08/06/2025,1,15,0.00,,两只一共30
+xhs,Boarding,皮皮,Domestic Short,Male,Cat,no,06/06/2025,08/06/2025,1,15,0.00,,两只一共30
+xhs,Boarding,Kylie,Aussie Doodle,Female,Dog,no,05/05/2025,11/06/2025,37,1215,"1,215.00",,35一天
+xhs,Boarding,雪哈,Husky,Female,Dog,yes,04/06/2025,17/06/2025,13,300,300.00,,
+xhs,Boarding,Cotton,Corgi,Female,Dog,yes,04/05/2025,18/06/2025,45,1800,"1,660.00",,40一天，打折
+xhs,Boarding,曲奇,French Bulldog,Male,Dog,no,30/05/2025,24/06/2025,25,1125,"1,125.00",,
+xhs,Boarding,Mason,Shiba Inu,Male,Dog,yes,07/06/2025,26/06/2025,19,950,950.00,,两只1v1，一天100
+xhs,Boarding,Turbo,Corgi,Male,Dog,yes,07/06/2025,26/06/2025,19,950,950.00,,两只1v1，一天100
+xhs,Boarding,Rolie,French Bulldog,Male,Dog,no,30/06/2025,02/07/2025,3,135,135.00,,
+xhs,Boarding,Millie,French Bulldog,Male,Dog,no,30/06/2025,02/07/2025,3,135,135.00,,
+xhs,Boarding,Summer,Cavapoo,Female,Dog,yes,30/06/2025,06/07/2025,6,180,180.00,,
+xhs,Boarding,Rusty,Golden Doodle,Male,Dog,yes,02/07/2025,07/07/2025,5,225,225.00,,
+xhs,Boarding,Lulu,Teddy,Female,Dog,no,06/07/2025,09/07/2025,4,180,180.00,,
+xhs,Boarding,可乐,Maltese,Male,Dog,yes,10/06/2025,12/07/2025,32,960,960.00,,一天30
+xhs,Boarding,柚柚,British Short,Male,Cat,yes,19/04/2025,14/07/2025,86,1200,"1,200.00",Pika,400一个月
+xhs,Boarding,Pika,American Short,Male,Cat,yes,19/04/2025,14/07/2025,86,1200,"1,200.00",柚柚,400一个月
+xhs,Boarding,Oliver,Dachshund Long,Male,Dog,yes,08/07/2025,14/07/2025,6,180,200.00,,
+xhs,Boarding,噗噗,French Bulldog,Male,Dog,no,15/07/2025,20/07/2025,5,200,200.00,,40一天
+xhs,Boarding,依依,Schnauzer,Female,Dog,no,17/07/2025,23/07/2025,6,180,180.00,,
+xhs,Boarding,百亿,French Bulldog,Male,Dog,no,13/06/2025,13/08/2025,60,2700,"1,350.00",,
+xhs,Boarding,Boba,Siberian Long,Male,Cat,yes,06/05/2025,06/10/2025,150,2750,"2,750.00",,一个月550
+xhs,Boarding,Mia,American Short,Female,Cat,yes,31/07/2025,16/08/2025,16,390,390.00,,一周170，一天25
+xhs,Boarding,Noel,Domestic Long,Male,Cat,yes,16/04/2025,16/08/2025,120,2200,0.00,,一个月550，一天15
+xhs,Boarding,弟弟,British Short,Female,Cat,yes,20/05/2025,20/08/2025,90,900,900.00,,两只一个月600
+xhs,Boarding,蛋黄,American Short,Male,Cat,yes,20/05/2025,20/08/2025,90,900,900.00,,两只一个月600
+xhs,Boarding,豆包,Maltese,Male,Dog,yes,10/07/2025,20/08/2025,45,960,190.00,,长期8折，30一天
+xhs,Boarding,Rolie,French Bulldog,Male,Dog,no,15/08/2025,20/08/2025,6,270,270.00,,
+xhs,Boarding,Millie,French Bulldog,Male,Dog,no,15/08/2025,20/08/2025,6,270,270.00,,
+xhs,Boarding,巴士,Russian Blue,Male,Cat,yes,21/06/2025,21/08/2025,60,800,25.00,,
+xhs,Boarding,布丁,British Short,Male,Cat,yes,21/06/2025,21/08/2025,60,800,25.00,,
+xhs,Boarding,Donny,Cavapoo,Female,Dog,no,23/05/2025,23/08/2025,90,2000,"1,000.00",,打包价
+xhs,Boarding,旮豆,British Short,Female,Cat,yes,17/12/2024,24/08/2025,69,853,853.00,小佐/挖泥,一个月550，一天40，算两只猫的价格
+xhs,Boarding,小佐,Domestic Long,Female,Cat,no,15/06/2025,24/08/2025,69,853,853.00,旮豆/小佐,一个月550，算两只猫的价格
+xhs,Boarding,挖泥,British Short,Female,Cat,yes,15/06/2025,24/08/2025,69,853,853.00,旮豆/挖泥,一个月550，算两只猫的价格
+xhs,Boarding,栗子,Border Collie,Female,Dog,yes,01/06/2025,01/09/2025,90,4500,"1,500.00",,一天50
+xhs,Boarding,小鱼,Domestic Short,Female,Cat,yes,01/07/2025,02/09/2025,60,1100,220.00,,
+xhs,Boarding,多多,Russian Blue,Male,Cat,yes,12/06/2025,12/08/2025,60,1000,"1,000.00",,一个月500
+xhs,Boarding,Ace,Schnauzer,Male,Dog,no,13/07/2025,11/08/2025,25,750,750.00,,28天840，多的一天30
+xhs,Boarding,Madi,Cavapoo,Female,Dog,yes,01/08/2025,10/08/2025,9,270,300.00,,
+xhs,Boarding,歇歇,Bichon Frise,Female,Dog,yes,06/08/2025,10/08/2025,4,120,140.00,,
+xhs,Boarding,Papaya,Mixed,Female,Dog,yes,21/08/2025,29/08/2025,8,280,0.00,,
+xhs,Boarding,Archie,Berne Doodle,Male,Dog,yes,22/08/2025,13/09/2025,22,566,0.00,Luna/Brownie,一天一共3只80
+ ,Boarding,Luna,Australian Shepherd,Female,Dog,yes,22/08/2025,13/09/2025,22,566,0.00,Brownie/Archie,一天一共3只80
+xhs,Boarding,Brownie,Dachshund Long,Male,Dog,no,22/08/2025,13/09/2025,22,566,0.00,Archie/Luna,一天一共3只80
+xhs,Boarding,Oliver,Dachshund Long,Male,Dog,yes,30/08/2025,05/09/2025,6,180,0.00,,
+xhs,Boarding,Oliver,Dachshund Long,Male,Dog,yes,18/09/2025,21/09/2025,3,90,0.00,,
+xhs,Boarding,可乐,Maltese,Male,Dog,yes,03/08/2025,12/08/2025,9,270,300.00,,一天30
+xhs,Boarding,Uni,Shiba Inu,Male,Dog,yes,20/07/2025,24/07/2025,5,225,225,,
+xhs,Boarding,Kylie,Aussie Doodle,Female,Dog,no,13/07/2025,23/07/2025,10,350,350,,35一天
+xhs,Boarding,雪蛤,Husky,Female,Dog,yes,05/08/2025,28/08/2025,22,450,450,,
+xhs,Boarding,椰椰,Bichon Frise,Female,Dog,yes,19/08/2025,24/08/2025,5,150,150,,
+xhs,Boarding,Kylie,Aussie Doodle,Female,Dog,no,12/08/2025,18/08/2025,6,210,50,,35一天
