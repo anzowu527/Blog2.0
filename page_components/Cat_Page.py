@@ -13,13 +13,13 @@ def encode_image_to_base64(image_path: str) -> str:
 
 import random
 from pathlib import Path
-def go_back_to_dogtopia():
+def go_back_to_sheltopia():
     
     try:
-        st.experimental_set_query_params(page="dogtopia")
+        st.experimental_set_query_params(page="catopia")
     except Exception:
         # Old versions only
-        st.experimental_set_query_params(page="dogtopia")
+        st.experimental_set_query_params(page="catopia")
 
     st.rerun()
 
@@ -27,10 +27,10 @@ def go_back_to_dogtopia():
 
 def get_dog_images(dog_name: str) -> List[Dict[str, str]]:
     """
-    Pick up to 10 random, non-repeating images from images/dogtopia/<dog_name>,
+    Pick up to 10 random, non-repeating images from images/shelter/<dog_name>,
     excluding the cover "{dog_name}1.webp". Returns [{url, alt}] with base64 data URLs.
     """
-    folder = Path("images") / "dogtopia" / dog_name
+    folder = Path("images") / "catopia" / dog_name
     if not folder.is_dir():
         return []
 
@@ -88,7 +88,7 @@ def set_query_params_safe(**params):
 # ---------- Page ----------
 def main(dog_name: str):
     # NOTE: do NOT call st.set_page_config here (it’s already called in streamlit_app)
-    st.title(f"🐶 Story of {dog_name.capitalize()}")
+    st.title(f"🐱 Story of {dog_name.capitalize()}")
 
     # --- Hide sidebar ONLY on this page ---
     st.markdown("""
@@ -101,20 +101,20 @@ def main(dog_name: str):
     """, unsafe_allow_html=True)
 
     # Normalize and map dog_name to the true casing of the folder
-    base_dir = os.path.join("images", "dogtopia")
+    base_dir = os.path.join("images", "catopia")
     if not os.path.isdir(base_dir):
-        st.error("'images/dogtopia' folder not found.")
+        st.error("'images/catopia' folder not found.")
         return
 
     all_dog_folders = [name for name in os.listdir(base_dir) if os.path.isdir(os.path.join(base_dir, name))]
     if not all_dog_folders:
-        st.error("No dog folders found under images/dogtopia.")
+        st.error("No dog folders found under images/catopia.")
         return
 
     name_map = {name.lower(): name for name in all_dog_folders}
     key_lower = (dog_name or "").lower()
     if key_lower not in name_map:
-        st.error(f"Dog '{dog_name}' not found.")
+        st.error(f"Cat '{dog_name}' not found.")
         return
 
     true_dog_name = name_map[key_lower]
@@ -300,7 +300,7 @@ def main(dog_name: str):
         f"⬅️ Previous ({prev_dog.capitalize()})</a>"
         if prev_dog else ""
     )
-    back_html = "<a class='dog-btn' href='javascript:void(0)' onclick='backDogtopia()'>🏠 Back to Dogtopia</a>"
+    back_html = "<a class='dog-btn' href='javascript:void(0)' onclick='backDogtopia()'>🏠 Back to Catopia</a>"
     next_html = (
         f"<a class='dog-btn' href='javascript:void(0)' onclick=\"goDog('{quote(next_dog)}')\">"
         f"Next ({next_dog.capitalize()}) ➡️</a>"
@@ -346,12 +346,12 @@ def main(dog_name: str):
     }}
 
     function goDog(name) {{
-        const url = APP_BASE + '?page=dog&dog=' + encodeURIComponent(name);
+        const url = APP_BASE + '?page=cat&cat=' + encodeURIComponent(name);
         safeOpen(url);
     }}
 
     function backDogtopia() {{
-        const url = APP_BASE + '?page=dogtopia';
+        const url = APP_BASE + '?page=catopia';
         safeOpen(url);
     }}
     </script>
@@ -359,17 +359,16 @@ def main(dog_name: str):
 
     html(nav_html, height=96)
 
-
 # Allow running this module directly for quick testing
 if __name__ == "__main__":
-    q = st.query_params.get("dog") if hasattr(st, "query_params") else None
+    q = st.query_params.get("cat") if hasattr(st, "query_params") else None
     dog_param = q[0] if isinstance(q, list) else (q if isinstance(q, str) else None)
     if not dog_param:
-        base_dir = os.path.join("images", "dogtopia")
+        base_dir = os.path.join("images", "catopia")
         if os.path.isdir(base_dir):
             folders = [d for d in os.listdir(base_dir) if os.path.isdir(os.path.join(base_dir, d))]
             dog_param = folders[0] if folders else ""
     if dog_param:
         main(dog_param)
     else:
-        st.info("Add some folders under images/dogtopia and pass ?page=dog&dog=Name in the URL.")
+        st.info("Add some folders under images/dogtopia and pass ?page=cat&cat=Name in the URL.")
