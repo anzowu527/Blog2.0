@@ -16,12 +16,12 @@ xhs,Boarding,Rolie,French Bulldog,Male,Dog,no,2025-08-15,2025-08-20,6.0,270.0,27
 xhs,Boarding,Millie,French Bulldog,Male,Dog,no,2025-08-15,2025-08-20,6.0,270.0,270.0,,,45.0,0.0,08/2025
 xhs,Boarding,Kylie,Aussie Doodle,Female,Dog,no,2025-08-12,2025-08-18,6.0,210.0,50.0,,35一天,35.0,0.0,08/2025
 xhs,Boarding,歇歇,Bichon Frise,Female,Dog,yes,2025-08-06,2025-08-10,4.0,120.0,140.0,,,30.0,20.0,08/2025
-xhs,Boarding,雪哈,Husky,Female,Dog,yes,2025-08-05,2025-08-28,22.0,450.0,450.0,,,20.45,0.0,08/2025
+xhs,Boarding,雪哈,Husky,Female,Dog,yes,2025-08-05,2025-09-03,28.0,600.0,600.0,,,21.43,0.0,"08/2025, 09/2025"
 xhs,Boarding,可乐,Maltese,Male,Dog,yes,2025-08-03,2025-08-12,9.0,270.0,300.0,,一天30,30.0,30.0,08/2025
 xhs,Boarding,Madi,Cavapoo,Female,Dog,yes,2025-08-01,2025-08-10,9.0,270.0,300.0,,,30.0,30.0,08/2025
 xhs,Boarding,Mia,American Short,Female,Cat,yes,2025-07-31,2025-08-16,16.0,390.0,390.0,,一周170，一天25,24.38,0.0,"07/2025, 08/2025"
 xhs,Boarding,Uni,Shiba Inu,Male,Dog,yes,2025-07-20,2025-07-24,5.0,225.0,225.0,,,45.0,0.0,07/2025
-xhs,Boarding,Cotton,Corgi,Female,Dog,yes,2025-07-19,2025-07-21,2.0,80.0,100.0,nan,,40.0,20.0,07/2025
+xhs,Boarding,Cotton,Corgi,Female,Dog,yes,2025-07-19,2025-07-21,2.0,80.0,100.0,,,40.0,20.0,07/2025
 xhs,Boarding,豆包,Maltese,Male,Dog,yes,2025-07-18,2025-08-30,42.0,1008.0,190.0,,长期8折，30一天,24.0,0.0,"07/2025, 08/2025"
 xhs,Boarding,依依,Schnauzer,Female,Dog,no,2025-07-17,2025-07-23,6.0,180.0,180.0,,,30.0,0.0,07/2025
 xhs,Boarding,噗噗,French Bulldog,Male,Dog,no,2025-07-15,2025-07-20,5.0,200.0,200.0,,40一天,40.0,0.0,07/2025
@@ -56,7 +56,7 @@ Rover,Boarding,Brody,Wire Fox Terrior,Male,Dog,Yes,2025-05-31,2025-06-03,3.0,85.
 Rover,Boarding,Oliver,Mixed,Male,Dog,Yes,2025-05-30,2025-06-02,3.0,245.0,245.0,,,81.67,0.0,"05/2025, 06/2025"
 xhs,Boarding,曲奇,French Bulldog,Male,Dog,no,2025-05-30,2025-06-24,25.0,1125.0,1125.0,,,45.0,0.0,"05/2025, 06/2025"
 xhs,Boarding,Kendrick,Shiba Inu,Male,Dog,yes,2025-05-24,2025-05-26,3.0,135.0,165.0,,一天45,45.0,30.0,05/2025
-xhs,Boarding,Donny,Cavapoo,Female,Dog,no,2025-05-23,2025-08-24,90.0,2000.0,1000.0,,打包价,22.22,0.0,"05/2025, 06/2025, 07/2025, 08/2025"
+xhs,Boarding,Donny,Cavapoo,Female,Dog,no,2025-05-23,2025-08-24,90.0,2000.0,2000.0,,打包价,22.22,0.0,"05/2025, 06/2025, 07/2025, 08/2025"
 xhs,Boarding,屁屁,Corgi,Male,Dog,no,2025-05-22,2025-06-08,17.0,500.0,500.0,,新客两只8折+抹零,29.41,0.0,"05/2025, 06/2025"
 xhs,Boarding,皮卡丘,poodle mix,Male,Dog,yes,2025-05-22,2025-06-08,17.0,500.0,500.0,,新客两只8折+抹零,29.41,0.0,"05/2025, 06/2025"
 xhs,Boarding,Liberty,Dachshund Long,Female,Dog,yes,2025-05-21,2025-06-01,11.0,330.0,380.0,,,30.0,50.0,05/2025
@@ -156,11 +156,11 @@ Rover,Boarding,Melody,Domestic Short,Female,Cat,Yes,2024-12-23,2024-12-30,7.0,28
 Rover,Boarding,Dobby,Chihuahua,Male,Dog,Yes,2024-12-22,2024-12-26,4.0,134.0,134.0,Athena,,33.5,0.0,12/2024
 xhs,Boarding,Nato,Shiba Inu,Male,Dog,no,2024-12-22,2025-01-08,17.0,595.0,595.0,,一天35,35.0,0.0,"12/2024, 01/2025"
 Rover,Boarding,Athena,Siberian,Female,Cat,Yes,2024-12-22,2024-12-26,4.0,134.0,134.0,Dobby,,33.5,0.0,12/2024
-xhs,Boarding,Archie,Berne Doodle,Male,Dog,yes,2024-12-21,2024-12-28,7.0,175.0,175.0,Luna/Brownie,,25.0,0.0,12/2024
-xhs,Boarding,Brownie,Dachshund Long,Male,Dog,no,2024-12-21,2024-12-28,7.0,175.0,175.0,Archie/Luna,一天一共3只75,25.0,0.0,12/2024
 xhs,Boarding,Bubble,American Short,Male,Cat,yes,2024-12-21,2025-05-10,139.0,1750.0,1750.0,,一个月450,12.59,0.0,"12/2024, 01/2025, 02/2025, 03/2025, 04/2025, 05/2025"
-xhs,Boarding,Rocket,American Short,Male,Cat,yes,2024-12-21,2025-05-10,139.0,1750.0,1750.0,,两只一个月800,12.59,0.0,"12/2024, 01/2025, 02/2025, 03/2025, 04/2025, 05/2025"
+xhs,Boarding,Brownie,Dachshund Long,Male,Dog,no,2024-12-21,2024-12-28,7.0,175.0,175.0,Archie/Luna,一天一共3只75,25.0,0.0,12/2024
+xhs,Boarding,Archie,Berne Doodle,Male,Dog,yes,2024-12-21,2024-12-28,7.0,175.0,175.0,Luna/Brownie,,25.0,0.0,12/2024
 shelter,Boarding,Penny,Pit Bull,Female,Dog,No,2024-12-21,2025-01-19,21.0,675.0,675.0,,,32.14,0.0,"12/2024, 01/2025"
+xhs,Boarding,Rocket,American Short,Male,Cat,yes,2024-12-21,2025-05-10,139.0,1750.0,1750.0,,两只一个月800,12.59,0.0,"12/2024, 01/2025, 02/2025, 03/2025, 04/2025, 05/2025"
 xhs,Boarding,Luna,Australian Shepherd,Female,Dog,yes,2024-12-21,2024-12-28,7.0,175.0,175.0,Brownie/Archie,,25.0,0.0,12/2024
 xhs,Boarding,Baggie,Cavapoo,Male,Dog,no,2024-12-20,2024-12-29,10.0,300.0,300.0,,一天30,30.0,0.0,12/2024
 xhs,Boarding,咪豆,Border Collie,Male,Dog,no,2024-12-20,2025-01-06,18.0,720.0,720.0,,一天45,40.0,0.0,"12/2024, 01/2025"
@@ -171,9 +171,9 @@ xhs,Boarding,小佐,Domestic Long,Female,Cat,no,2024-12-17,2025-01-13,27.0,366.6
 xhs,Boarding,旮豆,British Short,Female,Cat,yes,2024-12-17,2025-01-13,27.0,366.6,366.6,小佐/挖泥,一个月550，算两只猫的价格,13.58,0.0,"12/2024, 01/2025"
 xhs,Boarding,波妞,Cavapoo,Female,Dog,no,2024-12-16,2024-12-19,4.0,120.0,120.0,,一天30,30.0,0.0,12/2024
 xhs,Boarding,拉拉,Dachshund Short,Female,Dog,no,2024-12-14,2025-01-11,28.0,700.0,700.0,,700一个月,25.0,0.0,"12/2024, 01/2025"
+shelter,Boarding,Willow,German Shepherd,Female,Dog,No,2024-12-12,2024-12-14,2.0,50.0,50.0,,,25.0,0.0,12/2024
 shelter,Boarding,Chloe,Husky,Female,Dog,No,2024-12-12,2024-12-14,2.0,50.0,50.0,,,25.0,0.0,12/2024
 shelter,Boarding,Annabelle,Meltese,Female,Dog,No,2024-12-12,2024-12-14,2.0,50.0,50.0,,,25.0,0.0,12/2024
-shelter,Boarding,Willow,German Shepherd,Female,Dog,No,2024-12-12,2024-12-14,2.0,50.0,50.0,,,25.0,0.0,12/2024
 shelter,Boarding,King,German Shepherd,Male,Dog,No,2024-12-10,2025-01-06,27.0,575.0,575.0,,3w6d,21.3,0.0,"12/2024, 01/2025"
 xhs,Boarding,Shyshy,Shiba Inu,Female,Dog,yes,2024-12-09,2025-01-08,30.0,728.0,728.0,,一天28,24.27,0.0,"12/2024, 01/2025"
 shelter,Boarding,Duke,Pit Bull,Male,Dog,No,2024-12-09,2025-02-13,64.0,1205.0,1205.0,,,18.83,0.0,"12/2024, 01/2025, 02/2025"
@@ -199,9 +199,9 @@ Rover,Boarding,Bentley,Corgi,Male,Dog,Yes,2024-11-28,2024-11-30,2.0,86.0,104.0,,
 Rover,Boarding,Dio,Domestic Short,Male,Cat,Yes,2024-11-27,2024-12-01,5.0,215.0,235.0,,一天43，小费20,43.0,20.0,11/2024
 shelter,Boarding,Zoe,Mixed,Female,Dog,No,2024-11-27,2025-02-13,78.0,1400.0,1400.0,,8w4d,17.95,0.0,"11/2024, 12/2024, 01/2025, 02/2025"
 shelter,Boarding,Honey,Mixed,Female,Dog,No,2024-11-27,2024-12-01,4.0,100.0,100.0,,,25.0,0.0,11/2024
-xhs,Boarding,Cotton,Corgi,Female,Dog,Yes,2024-11-26,2024-11-29,3.0,129.0,145.2,,一天43，小费16,43.0,16.2,11/2024
 xhs,Boarding,Momo,Maltese,Female,Dog,yes,2024-11-26,2024-12-01,5.0,150.0,150.0,,一天30,30.0,0.0,11/2024
 Rover,Boarding,Ivy,Domestic Short,Female,Cat,Yes,2024-11-26,2024-12-01,5.0,215.0,215.0,,43一天,43.0,0.0,11/2024
+xhs,Boarding,Cotton,Corgi,Female,Dog,Yes,2024-11-26,2024-11-29,3.0,129.0,145.2,,一天43，小费16,43.0,16.2,11/2024
 xhs,Boarding,Gigi,British Short,Female,Cat,yes,2024-11-25,2024-12-13,18.0,305.0,305.0,Tobi,一周170，两只打折，+11天（30一天）,16.94,0.0,"11/2024, 12/2024"
 xhs,Boarding,Tobi,British Short,Male,Cat,no,2024-11-25,2024-12-13,18.0,305.0,305.0,Gigi,一周170，两只打折，+11天（30一天）,16.94,0.0,"11/2024, 12/2024"
 shelter,Boarding,Stitch,Pit Bull,Male,Dog,No,2024-11-24,2024-11-24,1.0,100.0,100.0,,,100.0,0.0,11/2024
@@ -240,9 +240,9 @@ Rover,Boarding,Migo,Chihuahua,Male,Dog,Yes,2024-08-16,2024-08-18,2.0,67.5,67.5,M
 Rover,Drop In,Moomoo,Domestic Short,Male,Cat,Yes,2024-08-11,2024-08-17,5.0,100.0,100.0,,,20.0,0.0,08/2024
 Rover,Drop In,Moomoo,Domestic Short,Male,Cat,Yes,2024-08-04,2024-08-10,5.0,80.0,100.0,,,16.0,20.0,08/2024
 Rover,Boarding,Easton,Chihuahua,Male,Dog,Yes,2024-08-04,2024-08-23,19.0,700.0,700.0,,,36.84,0.0,08/2024
+Rover,Drop In,Nyxey,Domestic Short,Female,Cat,Yes,2024-08-01,2024-08-04,7.0,84.6,84.6,Molly/Penny,,12.09,0.0,08/2024
 Rover,Drop In,Molly,Miniature Schnauzer,Female,Dog,Yes,2024-08-01,2024-08-04,7.0,84.6,84.6,Nyxey/Penny,,12.09,0.0,08/2024
 Rover,Drop In,Penny,Cavalier King,Female,Dog,Yes,2024-08-01,2024-08-04,7.0,84.6,84.6,Nyxey/Molly,,12.09,0.0,08/2024
-Rover,Drop In,Nyxey,Domestic Short,Female,Cat,Yes,2024-08-01,2024-08-04,7.0,84.6,84.6,Molly/Penny,,12.09,0.0,08/2024
 Rover,Boarding,Bruce,Siamese,Male,Cat,Yes,2024-07-30,2024-08-26,27.0,666.6,666.6,Mimi/Abby,,24.69,0.0,"07/2024, 08/2024"
 Rover,Boarding,Abby,Siamese,Female,Cat,Yes,2024-07-30,2024-08-26,27.0,666.6,666.6,Bruce/Mimi,,24.69,0.0,"07/2024, 08/2024"
 Rover,Boarding,Mimi,Siamese,Female,Cat,Yes,2024-07-30,2024-08-26,27.0,666.6,666.6,Bruce/Abby,,24.69,0.0,"07/2024, 08/2024"
