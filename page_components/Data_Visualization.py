@@ -1,445 +1,512 @@
-#######################
-# Import libraries
+# data_visualization1.py
 import streamlit as st
 import pandas as pd
-import plotly.express as px
-from datetime import datetime, timedelta
+import altair as alt
+from pathlib import Path
+import numpy as np
 from matplotlib import cm
 import matplotlib.colors as mcolors
-import altair as alt
-from PIL import Image, ImageOps, ImageDraw
-from io import BytesIO
+from streamlit_echarts import st_echarts
+from datetime import datetime, timedelta, date
 import base64
 import os
-from calendar import monthrange
-from plotly.colors import sample_colorscale
 
-# ✅ Make page wide & sidebar expanded for better responsiveness
-st.set_page_config(page_title="Kingdom Data Dashboard", layout="wide", initial_sidebar_state="expanded")
 
-#######################
+def revenue_chart(df, selected_month=None, color_scheme="blues", height=360):
+    df = df.copy()
+    df['Arrival Date'] = pd.to_datetime(df['Arrival Date'], errors='coerce')
+    df['Departure Date'] = pd.to_datetime(df['Departure Date'], errors='coerce')
+    df['daily price'] = pd.to_numeric(df['daily price'], errors='coerce')
+    df = df.dropna(subset=['Arrival Date', 'Departure Date', 'daily price'])
+
+    # Only valid stays
+    df = df[df['Departure Date'] > df['Arrival Date']]
+
+    def _expand_row(r):
+        arr = r['Arrival Date'].normalize()
+        dep = r['Departure Date'].normalize()
+        p   = r['daily price']
+        if pd.isna(arr) or pd.isna(dep) or pd.isna(p) or dep < arr:
+            return pd.DataFrame(columns=['date', 'daily_price'])
+
+        # Same-day stay: count the day once
+        if dep == arr:
+            return pd.DataFrame({'date': [arr], 'daily_price': [p]})
+
+        # Multi-day: exclude arrival and checkout -> [arr+1, dep-1]
+        start = arr + pd.Timedelta(days=1)
+        end   = dep - pd.Timedelta(days=1)
+        if end < start:
+            return pd.DataFrame(columns=['date', 'daily_price'])
+
+        return pd.DataFrame({'date': pd.date_range(start, end), 'daily_price': p})
+
+    expanded = df.apply(_expand_row, axis=1)
+    df_revenue = pd.concat(expanded.to_list(), ignore_index=True) if len(expanded) else pd.DataFrame(columns=['date','daily_price'])
+
+    # Optional month filter
+    if selected_month and selected_month != "Show All":
+        m, y = map(int, selected_month.split('/'))
+        start_date = pd.Timestamp(year=y, month=m, day=1)
+        end_date = start_date + pd.offsets.MonthEnd(0)
+        df_revenue = df_revenue[(df_revenue['date'] >= start_date) & (df_revenue['date'] <= end_date)]
+
+    if df_revenue.empty:
+        return alt.Chart(pd.DataFrame({'date': [], 'daily_price': []})).mark_line().properties(width='container', height=height)
+
+    daily_revenue = df_revenue.groupby('date', as_index=False)['daily_price'].sum()
+    daily_revenue['color_key'] = 'Revenue'
+
+    chart = (
+        alt.Chart(daily_revenue)
+        .mark_line(point=True)
+        .encode(
+            x=alt.X('date:T', title='Date', axis=alt.Axis(format='%b %Y', tickCount='month', labelAngle=0)),
+            y=alt.Y('daily_price:Q', title='Daily Revenue ($)', scale=alt.Scale(zero=False)),
+            color=alt.Color('color_key:N', scale=alt.Scale(scheme=color_scheme), legend=None),
+            tooltip=[alt.Tooltip('date:T'), alt.Tooltip('daily_price:Q', format=",.2f")]
+        )
+        .properties(
+            title=f"Daily Revenue for {selected_month}" if selected_month and selected_month != "Show All" else "Daily Revenue (All Time)",
+            width='container',
+            height=height
+        )
+        .configure(background="transparent")
+        .configure_view(fill="transparent")
+    )
+    return chart
+def revenue_stacked_line_options_by_year(df, stack=True, focus_year=None, color_palette=None):
+    import pandas as pd
+    x = df.copy()
+    x['Arrival Date']  = pd.to_datetime(x['Arrival Date'], errors='coerce')
+    x['Departure Date'] = pd.to_datetime(x['Departure Date'], errors='coerce')
+    x['daily price']   = pd.to_numeric(x.get('daily price'), errors='coerce')
+    x = x.dropna(subset=['Arrival Date', 'Departure Date', 'daily price'])
+    x = x[x['Departure Date'] > x['Arrival Date']]
+
+    def _expand_row(r):
+        arr, dep, p = r['Arrival Date'].normalize(), r['Departure Date'].normalize(), r['daily price']
+        if dep == arr:
+            return pd.DataFrame({'date':[arr], 'daily_price':[p]})
+        start, end = arr + pd.Timedelta(days=1), dep - pd.Timedelta(days=1)
+        if end < start: return pd.DataFrame(columns=['date','daily_price'])
+        return pd.DataFrame({'date': pd.date_range(start, end), 'daily_price': p})
+
+    expanded = x.apply(_expand_row, axis=1)
+    df_rev = pd.concat(expanded.to_list(), ignore_index=True) if len(expanded) else pd.DataFrame(columns=['date','daily_price'])
+    if df_rev.empty:
+        return {"title":{"text":"Monthly Revenue by Year (Stacked Line)"},"series":[]}
+
+    df_rev['year']  = df_rev['date'].dt.year.astype(int)
+    df_rev['month'] = df_rev['date'].dt.month.astype(int)
+    monthly = (df_rev.groupby(['year','month'], as_index=False)['daily_price']
+                     .sum().rename(columns={'daily_price':'revenue'}))
+
+    months = list(range(1,13))
+    month_labels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+    years = sorted(monthly['year'].unique())
+
+    # Put the focus (latest) year at the BOTTOM of the stack
+    target = focus_year if focus_year is not None else max(years)
+    ordered_years = [target] + [y for y in years if y != target]
+
+    series = []
+    for yr in ordered_years:
+        ydat = (monthly[monthly['year']==yr].set_index('month').reindex(months)['revenue']
+                .fillna(0.0).round(2).tolist())
+        s = {
+            "name": str(yr),
+            "type": "line",
+            "data": ydat,
+            "smooth": False,            # no curve smoothing
+            "symbol": "circle",
+            "symbolSize": 8,
+            "showSymbol": True,
+            "showAllSymbol": True,
+            "lineStyle": {"width": 2},
+            "emphasis": {"focus": "series"},
+        }
+        if stack:
+            s["stack"] = "total"
+        series.append(s)
+
+    options = {
+        "title": {"text": "Monthly Revenue by Year (Stacked Line)", "left": "center"},
+        "tooltip": {"trigger": "axis"},
+        "legend": {"data": [str(y) for y in ordered_years], "top": 28},
+        "grid": {"left": "3%", "right": "4%", "bottom": "3%", "containLabel": True},
+        "xAxis": {"type": "category", "boundaryGap": False, "data": month_labels, "axisLabel": {"interval": 0}},
+        "yAxis": {"type": "value"},
+        "series": series,
+        "backgroundColor": "rgba(0,0,0,0)",
+    }
+    if color_palette:
+        options["color"] = color_palette
+    return options
+
+
+
 def main():
-    alt.themes.enable("dark")
+    st.set_page_config(page_title="📈 Kingdom Revenue", layout="wide")
 
-    # Reset only when returning to this page
-    if "current_page" not in st.session_state:
-        st.session_state.current_page = "Data_Visualization"
-
-    if st.session_state.current_page != "Data_Visualization":
-        st.session_state.offset_days = 0
-
-    st.session_state.current_page = "Data_Visualization"
-
-    #######################
-    # Responsive CSS
+    # Match landing page theme
     st.markdown("""
     <style>
-    /* Make the main container truly full width and stable on reruns */
-    [data-testid="stAppViewContainer"] > .main .block-container {
-    padding-left: 2rem;
-    padding-right: 2rem;
-    padding-top: 1rem;
-    padding-bottom: 0rem;
-    margin-bottom: 0;             /* <- was -7rem */
-    max-width: 100% !important;   /* <- ensure full width */
+    html, body, [data-testid="stAppViewContainer"] { background-color: #ffeada !important; }
+    [data-testid="stHeader"] { background-color: #ffeada !important; }
+    [data-testid="stSidebar"] { background-color: #c8a18f !important; }
+    .stMetric { background: #c8a18f20; padding: 0.5rem; border-radius: 8px; }
+                
+    /* Custom navigation buttons */
+    div[data-testid="stHorizontalBlock"] div.stButton > button {
+        background-color: #c8a18f !important;  /* dark brown */
+        color: #fff !important;
+        border: none !important;
+        border-radius: 10px !important;
+        padding: 8px 18px !important;
+        font-weight: bold !important;
+        font-size: 15px !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2) !important;
+        transition: all 0.2s ease-in-out;
     }
-
-    /* Mobile padding tweak */
-    @media (max-width: 900px) {
-    [data-testid="stAppViewContainer"] > .main .block-container {
-        padding-left: 0.8rem;
-        padding-right: 0.8rem;
+    div[data-testid="stHorizontalBlock"] div.stButton > button:hover {
+        background-color: #3a251c !important;  /* darker brown */
+        transform: translateY(-2px);
     }
-    h1, h2, h3 { line-height: 1.2; }
+    div[data-testid="stHorizontalBlock"] div.stButton > button:active {
+        background-color: #2a1912 !important;
+        transform: translateY(0);
     }
-
-    /* Add horizontal gap between columns so content doesn’t collapse */
-    [data-testid="stHorizontalBlock"] {
-    gap: 1rem;
-    }
-
-    /* Metrics + button nowrap (unchanged) */
-    [data-testid="stMetric"]{ background-color:#393939;text-align:center;padding:12px 0;border-radius:10px;}
-    [data-testid="stMetricLabel"]{ display:flex;justify-content:center;align-items:center;}
-    button[kind="primary"] > div[data-testid="stMarkdownContainer"] p { white-space: nowrap; margin: 0; }
     </style>
     """, unsafe_allow_html=True)
 
+    st.title("📈 Kingdom Revenue")
+    st.caption("Daily total revenue; x-axis labeled by month")
 
-    #######################
-    # Load data
-    df = pd.read_csv('data/combined.csv')
+    # --- Operation date: default to today on fresh session ---
+    if "op_date" not in st.session_state:
+        st.session_state.op_date = date.today()
 
-    #######################
-    # Sidebar
-    with st.sidebar:
-        st.title('🐶 Zoolotopia 🐱')
+    # Compute selected op day/timestamp (used by charts below)
+    op_day = st.session_state.op_date
+    op_ts  = pd.to_datetime(op_day)
 
-        month_lists = df['months_active'].dropna().apply(lambda x: [m.strip() for m in x.split(',')])
-        unique_months = set(m for sublist in month_lists for m in sublist)
-        month_dt_sorted = sorted(pd.to_datetime(list(unique_months), format="%m/%Y"))
-        sorted_month_strings = [dt.strftime("%m/%Y") for dt in sorted(month_dt_sorted, reverse=True)]
-        month_options = ["Show All"] + sorted_month_strings
-
-        selected_month = st.selectbox("Select a month", month_options)
-
-        if selected_month == "Show All":
-            df_selected_month = df.copy()
-        else:
-            df_selected_month = df[df['months_active'].str.contains(selected_month, na=False)]
-
-        color_theme_list = ['blues', 'cividis', 'greens', 'inferno', 'magma', 'plasma', 'reds', 'rainbow', 'turbo', 'viridis']
-        selected_color_theme = st.selectbox('Select a color theme', color_theme_list)
-
-    ########################
-    st.title("Kingdom Data Dashboard")
-    st.markdown("---")
-
-    if selected_month == "Show All":
-        st.markdown("### 📈 Revenue Trend - All Months")
-    else:
-        formatted_month = pd.to_datetime(selected_month, format="%m/%Y").strftime("%B %Y")
-        st.markdown(f"### 📈 Revenue Trend – {formatted_month}", unsafe_allow_html=True)
-
-    #######################
-    # Plots
-    def revenue_chart(df, selected_month=None, color_scheme="blues", height=360):
-        df = df.copy()
-        df['Arrival Date'] = pd.to_datetime(df['Arrival Date'], errors='coerce')
-        df['Departure Date'] = pd.to_datetime(df['Departure Date'], errors='coerce')
-        df = df.dropna(subset=['Arrival Date', 'Departure Date', 'daily price'])
-
-        expanded = df.apply(
-            lambda row: pd.DataFrame({
-                'date': pd.date_range(row['Arrival Date'], row['Departure Date']),
-                'daily_price': row['daily price']
-            }),
-            axis=1
-        )
-        df_revenue = pd.concat(expanded.to_list(), ignore_index=True)
-
-        if selected_month and selected_month != "Show All":
-            month, year = map(int, selected_month.split('/'))
-            start_date = pd.Timestamp(year=year, month=month, day=1)
-            end_day = monthrange(year, month)[1]
-            end_date = pd.Timestamp(year=year, month=month, day=end_day)
-            df_revenue = df_revenue[(df_revenue['date'] >= start_date) & (df_revenue['date'] <= end_date)]
-
-        if df_revenue.empty:
-            return alt.Chart(pd.DataFrame({'date': [], 'daily_price': []})).mark_line().properties(width='container', height=height)
-
-        daily_revenue = df_revenue.groupby('date')['daily_price'].sum().reset_index()
-        daily_revenue['color_key'] = 'Revenue'
-
-        chart = (
-            alt.Chart(daily_revenue)
-            .mark_line(point=True)
-            .encode(
-                x=alt.X('date:T', title='Date'),
-                y=alt.Y('daily_price:Q', title='Daily Revenue ($)', scale=alt.Scale(zero=False)),
-                color=alt.Color('color_key:N', scale=alt.Scale(scheme=color_scheme), legend=None),
-                tooltip=[alt.Tooltip('date:T'), alt.Tooltip('daily_price:Q', format=",.2f")]
-            )
-            .properties(
-                title=f'Daily Revenue for {selected_month}' if selected_month and selected_month != "Show All" else "Daily Revenue (All Time)",
-                width='container',
-                height=height
-            )
-        )
-        return chart
-
-    def make_donut_chart(data, value_col, category_col, title, show_legend=True, color_scheme="blues", height=360):
-        total_value = data[value_col].sum()
-        label = f"${total_value:,.0f}" if value_col == "Revenue" else f"{total_value} bookings"
-
-        legend_config = alt.Legend(
-            orient="bottom",
-            title=None,
-            labelLimit=140,
-            labelFontSize=13,
-            symbolSize=180,
-            padding=8
-        ) if show_legend else None
-
-        base = alt.Chart(data).encode(
-            theta=alt.Theta(f"{value_col}:Q"),
-            color=alt.Color(f"{category_col}:N", scale=alt.Scale(scheme=color_scheme), legend=legend_config),
-            tooltip=[f"{category_col}:N", alt.Tooltip(f"{value_col}:Q", format=",.2f")]
-        )
-
-        donut = base.mark_arc(innerRadius=60)
-
-        return donut.properties(
-            width='container',
-            height=height,
-            title=f"{title} - {label}"
-        )
-
-    st.altair_chart(
-        revenue_chart(df, selected_month=selected_month, color_scheme=selected_color_theme, height=360),
-        use_container_width=True
+    st.markdown(
+        f"<div style='margin:8px 0 16px 0; color:#603D35;'>"
+        f"<strong>Viewing date:</strong> {op_day.strftime('%A, %b %d, %Y')}</div>",
+        unsafe_allow_html=True
     )
 
-    #######################
-    st.markdown("---")
+    # Load CSV
+    csv_path = Path("data/combined.csv")
+    if not csv_path.exists():
+        st.error("Could not find `data/combined.csv`. Please place the file in the `data/` folder.")
+        st.stop()
+    df = pd.read_csv(csv_path)
 
-    if selected_month == "Show All":
-        st.markdown("### 🐶🐱 Species Snapshot - All Months")
-    else:
-        formatted_month = pd.to_datetime(selected_month, format="%m/%Y").strftime("%B %Y")
-        st.markdown(f"### 🐶🐱 Species Snapshot – {formatted_month}", unsafe_allow_html=True)
+    # Old:
+    # st.altair_chart(
+    #     revenue_chart(df, selected_month=selected, color_scheme="blues", height=420),
+    #     use_container_width=True
+    # )
 
-    #######################
-    # Revenue by species (filtered by month)
-    df_rev_species = df_selected_month.dropna(subset=['Species', 'Payment Received'])
-    revenue_by_species = df_rev_species.groupby('Species')['Payment Received'].sum().reset_index()
-    revenue_by_species.rename(columns={'Payment Received': 'Revenue'}, inplace=True)
+    # New: stacked line by year (ECharts)
+    options = revenue_stacked_line_options_by_year(df, stack=False)
+    options["color"] = [
+        "#0B3C5D","#60A5FA","#BBD6FE", "#145DA0", "#A7C5EB",  "#1E6091", "#93C5FD", "#2563EB", "#7CB5FB", "#3B82F6"
+        
+    ]
+    for s in options.get("series", []):
+        s.update({
+            "smooth": False,
+            "symbol": "circle",
+            "symbolSize": 8,
+            "showSymbol": True,
+            "showAllSymbol": True,
+            "lineStyle": {"width": 2},
+        })
+    st_echarts(options=options, height="420px")
 
-    # Bookings by species per platform
-    df_grouped = df_selected_month.dropna(subset=["Platform", "Species"])
-    bookings_by_platform_species = (
-        df_grouped.groupby(["Platform", "Species"])
-        .size()
-        .reset_index(name="Bookings")
-    )
 
-    species_color_scheme = alt.Scale(scheme=selected_color_theme)
+    # Totals under the chart — Price + Tips
+    try:
+        d = df.copy()
+        d["Price"] = pd.to_numeric(d.get("Price"), errors="coerce")
+        d["Tips"]  = pd.to_numeric(d.get("Tips"), errors="coerce")
+        d = d.dropna(subset=["Price", "Tips"], how="all")
 
-    # Duration prep (global, all months for range)
-    df_duration_all = df.dropna(subset=["Duration", "Species"]).copy()
-    df_duration_all["Duration"] = pd.to_numeric(df_duration_all["Duration"], errors="coerce")
-    df_duration_all = df_duration_all.dropna(subset=["Duration"])
+        total_price = d["Price"].sum(min_count=1)
+        total_tips  = d["Tips"].sum(min_count=1)
+        revenue_total = (total_price if pd.notna(total_price) else 0) + (total_tips if pd.notna(total_tips) else 0)
 
-    #######################
-    # Layout Row: Donut - Histogram - Bar
-    col1, col2, col3 = st.columns(3)
+        st.metric("Revenue Total", f"${revenue_total:,.2f}", help="Sum of Price + Tips.")
+    except Exception as e:
+        st.warning(f"Could not compute Revenue Total: {e}")
 
-    with col1:
-        revenue_donut_chart = make_donut_chart(
-            revenue_by_species, 'Revenue', 'Species', 'Total Revenue by Species',
-            show_legend=True, color_scheme=selected_color_theme
-        )
-        st.altair_chart(revenue_donut_chart, use_container_width=True)
+    # ------------------ Operation (Donut + Current Week) ------------------
+    try:
+        tdf = df.copy()
+        tdf["Arrival Date"] = pd.to_datetime(tdf["Arrival Date"], errors="coerce")
+        tdf["Departure Date"] = pd.to_datetime(tdf["Departure Date"], errors="coerce")
+        tdf["daily price"]   = pd.to_numeric(tdf.get("daily price"), errors="coerce")
+        tdf["Species"]       = tdf.get("Species", "").astype(str).str.title().str.strip()
+        tdf["Name"]          = tdf.get("Name", "").astype(str).str.strip()
 
-    with col2:
-        # Month-filtered duration
-        df_duration_month = df_selected_month.dropna(subset=["Duration", "Species"]).copy()
-        df_duration_month["Duration"] = pd.to_numeric(df_duration_month["Duration"], errors="coerce")
-        df_duration_month = df_duration_month.dropna(subset=["Duration"])
+        # In house on op_ts: arrival < op_ts, departure >= op_ts
+        in_house = tdf[(tdf["Arrival Date"] < op_ts) & (tdf["Departure Date"] >= op_ts)]
 
-        duration_chart = (
-            alt.Chart(df_duration_month)
-            .mark_bar()
-            .encode(
-                x=alt.X("Duration:Q", bin=alt.Bin(maxbins=30), title="Length of Stay (Days)"),
-                y=alt.Y("count():Q", title="Number of Bookings"),
-                color=alt.Color("Species:N", title="Species", scale=species_color_scheme, legend=None),
-                tooltip=["Species:N", "count():Q"]
-            )
-            .properties(title="Length of Stay Distribution by Species", width='container')
-        )
-        st.altair_chart(duration_chart, use_container_width=True)
-
-    with col3:
-        bar_chart = (
-            alt.Chart(bookings_by_platform_species)
-            .mark_bar()
-            .encode(
-                x=alt.X("Platform:N", title="Platform"),
-                y=alt.Y("Bookings:Q", title="Number of Bookings"),
-                color=alt.Color("Species:N", scale=species_color_scheme, legend=None),
-                tooltip=["Platform", "Species", "Bookings"]
-            )
-            .properties(title="Bookings by Species within Each Platform", width='container')
-        )
-        st.altair_chart(bar_chart, use_container_width=True)
-
-    #######################
-    # Monthly stacked + Scatter + Violin
-    st.markdown("---")
-    col4, col5, col6 = st.columns(3)
-
-    with col4:
-        exploded = df.dropna(subset=["months_active", "Species"]).copy()
-        exploded["months_active"] = exploded["months_active"].str.split(", ")
-        exploded = exploded.explode("months_active")
-        exploded["Month_Year"] = pd.to_datetime(exploded["months_active"], format="%m/%Y", errors="coerce")
-        exploded = exploded.dropna(subset=["Month_Year"])
-        exploded["Month"] = exploded["Month_Year"].dt.strftime("%b")
-        exploded["Month_Num"] = exploded["Month_Year"].dt.month
-        exploded["Year"] = exploded["Month_Year"].dt.year.astype(str)
-
-        species_opacity_map = {"Dog": 1.0, "Cat": 0.8}
-        exploded["Species_Opacity"] = exploded["Species"].map(species_opacity_map)
-
-        grouped = (
-            exploded.groupby(["Month", "Month_Num", "Year", "Species", "Species_Opacity"])
-            .size()
-            .reset_index(name="Count")
+        # Per‑pet earnings for op_day
+        pet_earnings = (
+            in_house.groupby(["Name", "Species"], as_index=False)["daily price"]
+            .sum()
+            .rename(columns={"daily price": "Earning"})
         )
 
-        month_order = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
-        grouped = grouped.sort_values("Month_Num")
-
-        stacked_chart = (
-            alt.Chart(grouped)
-            .mark_bar()
-            .encode(
-                x=alt.X("Month:N", sort=month_order, title="Month"),
-                y=alt.Y("Count:Q", title="Number of Bookings"),
-                xOffset=alt.XOffset("Year:N"),
-                color=alt.Color("Year:N", title="Year", scale=alt.Scale(scheme=selected_color_theme)),
-                opacity=alt.Opacity("Species_Opacity:Q", legend=None),
-                tooltip=["Month:N", "Year:N", "Species:N", "Count:Q"]
-            )
-            .properties(title="📅 Monthly Bookings by Year (Cat/Dog Stacked via Opacity)", width='container')
-        )
-        st.altair_chart(stacked_chart, use_container_width=True)
-
-    with col5:
-        scatter_df = df_selected_month.dropna(subset=["daily price","Price","Species","Platform","Name","Duration"]).copy()
-        scatter_df["daily price"] = pd.to_numeric(scatter_df["daily price"], errors="coerce")
-        scatter_df["Price"] = pd.to_numeric(scatter_df["Price"], errors="coerce")
-        scatter_df["Duration"] = pd.to_numeric(scatter_df["Duration"], errors="coerce")
-        scatter_df = scatter_df.dropna(subset=["daily price","Price","Duration"])
-        scatter_df = scatter_df[(scatter_df["daily price"] > 0) & (scatter_df["Price"] > 0)]
-
-        scatter = (
-            alt.Chart(scatter_df)
-            .mark_circle(size=80, opacity=0.7)
-            .encode(
-                x=alt.X("daily price:Q", title="Daily Price ($)"),
-                y=alt.Y("Price:Q", title="Total Price ($)"),
-                color=alt.Color("Platform:N", title="Platform", scale=alt.Scale(scheme="category20")),
-                tooltip=[
-                    alt.Tooltip("Name:N"),
-                    alt.Tooltip("Platform:N"),
-                    alt.Tooltip("Species:N"),
-                    alt.Tooltip("Duration:Q"),
-                    alt.Tooltip("daily price:Q"),
-                    alt.Tooltip("Price:Q")
-                ]
-            )
-            .properties(title="💵 Daily Price vs. Total Price by Platform", width='container')
-        )
-        st.altair_chart(scatter, use_container_width=True)
-
-    def get_discrete_colors_from_continuous(colorscale_name, num_colors):
-        try:
-            return sample_colorscale(colorscale_name, [i / max(1,(num_colors - 1)) for i in range(num_colors)])
-        except Exception:
-            return px.colors.qualitative.Set2
-
-    with col6:
-        violin_df = df_selected_month.dropna(subset=["daily price", "Platform", "Species"]).copy()
-        violin_df["daily price"] = pd.to_numeric(violin_df["daily price"], errors="coerce")
-        violin_df = violin_df[violin_df["daily price"] > 0]
-
-        if not violin_df.empty:
-            platforms = violin_df["Platform"].unique()
-            color_sequence = get_discrete_colors_from_continuous(selected_color_theme, len(platforms))
-
-            fig = px.violin(
-                violin_df,
-                x="Platform",
-                y="daily price",
-                color="Platform",
-                facet_col="Species",
-                box=True,
-                points=False,
-                title="🧮 Daily Price Distribution by Platform (Faceted by Species)"
-            )
-            fig.update_layout(autosize=True, margin=dict(t=40, b=0, l=0, r=0), legend_title_text="Platform")
-            fig.update_traces(selector=dict(type='violin'))
-            st.plotly_chart(fig, use_container_width=True)
+        if pet_earnings.empty or pet_earnings["Earning"].sum() <= 0:
+            st.info("No pets in house (or no earnings) on this day.")
         else:
-            st.info("No valid data available for violin plot in this month.")
+            # Sort: Cats first, then Dogs; high → low
+            species_priority = {"Cat": 0, "Dog": 1}
+            pet_earnings["SpeciesOrder"] = pet_earnings["Species"].map(species_priority).fillna(9).astype(int)
+            pet_earnings = pet_earnings.sort_values(
+                by=["SpeciesOrder", "Earning"], ascending=[True, False]
+            ).reset_index(drop=True)
 
-    # Kingdom Header
-    st.markdown("---")
-    if selected_month == "Show All":
-        st.markdown("### 🐾 Kingdom Citizens Summary - All Months")
-    else:
-        formatted_month = pd.to_datetime(selected_month, format="%m/%Y").strftime("%B %Y")
-        st.markdown(f"### 🐾 Kingdom Citizens Summary – {formatted_month}", unsafe_allow_html=True)
+            # Colors
+            def get_palette(palette_name, n, vmin=0.35, vmax=0.95):
+                cmap = cm.get_cmap(palette_name)
+                if n <= 0: return []
+                return [mcolors.to_hex(cmap(vmin + (vmax - vmin) * i / max(n - 1, 1))) for i in range(n)]
 
-    # Filters
-    st.markdown("### 📦 Select Platform")
-    available_platforms = ["All Platforms"] + sorted(df_selected_month["Platform"].dropna().unique()) if "Platform" in df_selected_month.columns else ["All Platforms"]
-    selected_platform = st.radio("Choose a Platform", available_platforms, horizontal=True)
+            num_cats = (pet_earnings["Species"] == "Cat").sum()
+            num_dogs = (pet_earnings["Species"] == "Dog").sum()
+            cat_colors = get_palette("Greens", num_cats)
+            dog_colors = get_palette("Blues",  num_dogs)
+            color_array = cat_colors + dog_colors
 
-    selected_species = st.radio("Select Species", ["🐶 Dog", "🐱 Cat"], horizontal=True)
-    species_filter = "Dog" if selected_species == "🐶 Dog" else "Cat"
-    species_emoji = "🐶" if species_filter == "Dog" else "🐱"
+            series_data = [
+                {"value": float(row["Earning"]), "name": row["Name"]}
+                for _, row in pet_earnings.iterrows()
+            ]
 
-    if selected_platform == "All Platforms":
-        df_filtered = df_selected_month[df_selected_month["Species"] == species_filter]
-    else:
-        df_filtered = df_selected_month[(df_selected_month["Species"] == species_filter) & (df_selected_month["Platform"] == selected_platform)]
+            total_earning = float(pet_earnings["Earning"].sum())
+            title_txt = f"💰 Earnings Breakdown • {op_day.strftime('%b %d, %Y')}"
 
-    df_visits = df_filtered[df_filtered["Type"] != "Drop In"]
-    visits_grouped = df_visits.groupby(["Name", "Species"], as_index=False).size().rename(columns={"size": "Visits"})
-    visits_grouped = visits_grouped[visits_grouped["Species"] == species_filter].nlargest(10, "Visits")
-    visits_grouped["Visits"] = visits_grouped["Visits"].apply(lambda x: species_emoji * x)
-
-    df_duration = df_filtered.dropna(subset=["Name", "Duration"]).copy()
-    df_duration["Duration"] = pd.to_numeric(df_duration["Duration"], errors="coerce")
-    df_duration = df_duration.dropna(subset=["Duration"])
-    duration_grouped = df_duration.groupby(["Name", "Species"], as_index=False)["Duration"].max()
-    top_duration = duration_grouped[duration_grouped["Species"] == species_filter].nlargest(10, "Duration")
-    top_duration["Species"] = species_emoji
-
-    df_breed = df_filtered
-    breed_grouped = df_breed.groupby(["Breed"], as_index=False).size().rename(columns={"size": "Count"})
-    top_breeds = breed_grouped.nlargest(10, "Count")
-
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.markdown(f"**Top Returning {selected_species}s**")
-        st.dataframe(
-            visits_grouped[["Name", "Visits"]],
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                "Name": st.column_config.TextColumn("Pet Name"),
-                "Visits": st.column_config.TextColumn("Visits")
+            options = {
+                "backgroundColor": "rgba(0,0,0,0)",
+                "title": {"text": title_txt, "left": "center", "textStyle": {"color": "#603D35", "fontSize": 16}},
+                "tooltip": {"trigger": "item", "formatter": "{b}: ${c} ({d}%)"},
+                "color": color_array,
+                "series": [{
+                    "name": "Earnings",
+                    "type": "pie",
+                    "radius": ["40%", "70%"],
+                    "avoidLabelOverlap": False,
+                    "itemStyle": {"borderRadius": 10, "borderColor": "#fff", "borderWidth": 2},
+                    "label": {"show": False, "position": "center"},
+                    "emphasis": {"label": {"show": False}},
+                    "labelLine": {"show": False},
+                    "data": series_data,
+                }],
             }
-        )
+            options["graphic"] = [{
+                "id": "centerText",
+                "type": "text",
+                "left": "center",
+                "top": "middle",
+                "silent": True,
+                "style": {
+                    "text": f"Total: ${total_earning:,.0f}",
+                    "textAlign": "center",
+                    "fill": "#603D35",
+                    "fontSize": 22,
+                    "fontWeight": "bold",
+                    "lineHeight": 26
+                }
+            }]
 
-    with col2:
-        st.markdown(f"**Longest Stays – {selected_species}s**")
-        st.dataframe(
-            top_duration[["Name", "Duration"]],
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                "Name": st.column_config.TextColumn("Pet Name"),
-                "Duration": st.column_config.ProgressColumn(
-                    "Duration (Days)",
-                    format="%d",
-                    min_value=0,
-                    max_value=int(top_duration["Duration"].max()) if not top_duration.empty else 0
-                ),
-            }
-        )
+            st.markdown("---")
+            st.subheader(f"📊 Operation — {op_day.strftime('%b %d, %Y')}")
+            st.markdown("<div style='margin-bottom:20px;'></div>", unsafe_allow_html=True)
 
-    with col3:
-        st.markdown(f"**Top {selected_species}s Breeds**")
-        st.dataframe(
-            top_breeds,
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                "Breed": st.column_config.TextColumn("Breed"),
-                "Count": st.column_config.ProgressColumn(
-                    "Count",
-                    format="%d",
-                    min_value=0,
-                    max_value=int(top_breeds["Count"].max()) if not top_breeds.empty else 0,
+            left, right, spacer = st.columns([1, 1, 0.1], gap="large")
+
+            with left:
+                st_echarts(options=options, height="500px")
+
+            # -------- Right: CURRENT WEEK ONLY (Sun→Sat) --------
+            def _build_daily_revenue(df_: pd.DataFrame) -> pd.DataFrame:
+                if df_ is None or df_.empty:
+                    return pd.DataFrame(columns=['date', 'daily_price'])
+
+                x = df_.copy()
+                x['Arrival Date'] = pd.to_datetime(x['Arrival Date'], errors='coerce').dt.normalize()
+                x['Departure Date'] = pd.to_datetime(x['Departure Date'], errors='coerce').dt.normalize()
+                x['daily price']   = pd.to_numeric(x.get('daily price'), errors='coerce')
+                x = x.dropna(subset=['Arrival Date', 'Departure Date', 'daily price'])
+
+                if x.empty:
+                    return pd.DataFrame(columns=['date', 'daily_price'])
+
+                start_ = x['Arrival Date'].min()
+                end_   = x['Departure Date'].max()
+                all_days = pd.date_range(start_, end_, freq='D')
+
+                records = []
+                for d_ in all_days:
+                    mask = (x['Arrival Date'] < d_) & (x['Departure Date'] >= d_)
+                    total_ = x.loc[mask, 'daily price'].sum()
+                    records.append({'date': d_, 'daily_price': float(total_)})
+                return pd.DataFrame(records)
+
+            with right:
+                daily_rev = _build_daily_revenue(df)
+                if daily_rev.empty:
+                    st.info("No revenue data available for the current week.")
+                else:
+                    # Base week on selected op date
+                    today = op_ts
+                    days_since_sun = (today.weekday() + 1) % 7   # Sun=0, Mon=1, ...
+                    week_start = (today - pd.Timedelta(days=days_since_sun)).normalize()
+                    week_end   = week_start + pd.Timedelta(days=6)
+
+                    week_frame = pd.DataFrame({'date': pd.date_range(week_start, week_end, freq='D')})
+                    week_data = (
+                        week_frame.merge(daily_rev, on='date', how='left')
+                                  .fillna({'daily_price': 0})
+                    )
+                    week_total = float(week_data['daily_price'].sum())
+
+                    current_week_chart = (
+                        alt.Chart(week_data)
+                        .mark_line(point=True)
+                        .encode(
+                            x=alt.X(
+                                'date:T',
+                                title='Date',
+                                axis=alt.Axis(format='%A'),
+                                scale=alt.Scale(domain=[week_start.to_pydatetime(), week_end.to_pydatetime()])
+                            ),
+                            y=alt.Y('daily_price:Q', title='Revenue ($)', scale=alt.Scale(zero=True)),
+                            tooltip=[
+                                alt.Tooltip('date:T', title='Date'),
+                                alt.Tooltip('daily_price:Q', title='Revenue', format=",.0f")
+                            ]
+                        )
+                        .properties(
+                            title=f"Current Week (Sun–Sat): {week_start.strftime('%b %d')} – {week_end.strftime('%b %d')} • Total ${week_total:,.0f}",
+                            width='container',
+                            height=420
+                        )
+                        .configure(background="transparent")
+                        .configure_view(fill="transparent")
+                    )
+                    st.altair_chart(current_week_chart, use_container_width=True)
+
+            # -------- Controls: Prev / Today / Next (UNDER charts, ABOVE avatars) --------
+            c1, c2, c3, c4, c5 = st.columns([1.5,1.2,1,2,2])  # adjust ratios
+
+            with c1:
+                if st.button("← Previous Day", key="op_prev_day"):
+                    st.session_state.op_date = st.session_state.op_date - timedelta(days=1)
+                    st.rerun()
+            with c2:
+                if st.button("Today", key="op_today"):
+                    st.session_state.op_date = date.today()
+                    st.rerun()
+            with c3:
+                if st.button("Next Day →", key="op_next_day"):
+                    st.session_state.op_date = st.session_state.op_date + timedelta(days=1)
+                    st.rerun()
+
+            # -------- Under the graphs: Avatars of pets on op_day --------
+            st.markdown(
+                "<h3 style='text-align:left; color:#603D35; margin:0 0 18px 0;'>🐾 Pets in House</h3>",
+                unsafe_allow_html=True
+            )
+
+            def _find_avatar_path(name: str):
+                base_dir = "images/avatar"
+                if not name:
+                    return None
+                exts = [".webp", ".png", ".jpg", ".jpeg"]
+                for ext in exts:
+                    p = os.path.join(base_dir, f"{name}{ext}")
+                    if os.path.exists(p):
+                        return p
+                return None
+
+            def _img_b64(path: str):
+                with open(path, "rb") as f:
+                    return base64.b64encode(f.read()).decode("utf-8")
+
+            pets_today = (
+                tdf[
+                    (tdf["Arrival Date"] <= op_ts) &
+                    (tdf["Departure Date"] >= op_ts)
+                ][["Name", "Species", "Arrival Date", "Departure Date"]]
+                .dropna(subset=["Name"])
+                .drop_duplicates()
+                .sort_values(["Species", "Name"])
+                .reset_index(drop=True)
+            )
+
+            if pets_today.empty:
+                st.info("No pets in house on this day.")
+            else:
+                AVATAR_SIZE = 72
+                COL_GAP = 16
+                ROW_GAP = 22
+                cards_html = []
+
+                for _, r in pets_today.iterrows():
+                    name = str(r["Name"]).strip()
+                    arr_today = pd.to_datetime(r["Arrival Date"]).normalize() == op_ts
+                    dep_today = pd.to_datetime(r["Departure Date"]).normalize() == op_ts
+
+                    if arr_today:
+                        shadow = "0 0 10px 3px rgba(0, 200, 0, 0.55)"   # green glow
+                    elif dep_today:
+                        shadow = "0 0 10px 3px rgba(220, 0, 0, 0.55)"   # red glow
+                    else:
+                        shadow = "0 2px 6px rgba(0,0,0,.15)"            # neutral
+
+                    path = _find_avatar_path(name)
+                    if path:
+                        img_tag = f'<img src="data:image/*;base64,{_img_b64(path)}" ' \
+                                  f'style="width:{AVATAR_SIZE}px;height:{AVATAR_SIZE}px;object-fit:cover;' \
+                                  f'border-radius:50%;box-shadow:{shadow};border:3px solid white;" />'
+                    else:
+                        initials = (name[:2].upper() or "🐾")
+                        img_tag = (
+                            f'<div style="width:{AVATAR_SIZE}px;height:{AVATAR_SIZE}px;border-radius:50%;'
+                            f'background:#c8a18f;display:flex;align-items:center;justify-content:center;'
+                            f'color:white;font-weight:700;font-size:22px;box-shadow:{shadow};border:3px solid white;">'
+                            f'{initials}</div>'
+                        )
+
+                    card = (
+                        f'<div class="pet-card" '
+                        f'style="display:flex;flex-direction:column;align-items:center;row-gap:6px;">'
+                        f'{img_tag}'
+                        f'<div style="color:#603D35;font-weight:600;font-size:12px;text-align:center;max-width:{AVATAR_SIZE}px;'
+                        f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{name}</div>'
+                        f'</div>'
+                    )
+                    cards_html.append(card)
+
+                container_html = (
+                    f'<div style="display:flex;flex-wrap:wrap;column-gap:{COL_GAP}px;row-gap:{ROW_GAP}px;'
+                    f'justify-content:flex-start;align-items:flex-start;">'
+                    + "".join(cards_html) +
+                    '</div>'
                 )
-            }
-        )
+                st.markdown(container_html, unsafe_allow_html=True)
+                st.markdown("---")
+
+    except Exception as e:
+        st.warning(f"Could not render daily operation charts: {e}")
+
 
 if __name__ == "__main__":
     main()

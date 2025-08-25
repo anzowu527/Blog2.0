@@ -54,7 +54,7 @@ section[data-testid="stSidebar"] button:hover {
 ADMIN_PASSWORD = st.secrets.get("ADMIN_PASSWORD", "")
 
 def set_params(**updates):
-    # Merge, don't overwrite (supports both new and legacy APIs)
+    """Merge-style setter for query params. Pass None to remove a key."""
     try:
         qp = dict(st.query_params)
     except Exception:
@@ -62,16 +62,14 @@ def set_params(**updates):
 
     for k, v in updates.items():
         if v is None:
-            # REMOVE the key if caller passes None
             qp.pop(k, None)
-            continue
-        qp[k] = str(v)
+        else:
+            qp[k] = str(v)
 
     try:
         st.query_params = qp
     except Exception:
         st.experimental_set_query_params(**qp)
-
 
 def go(target: str, **extra):
     set_params(page=target, **extra)
@@ -87,10 +85,16 @@ with st.sidebar:
     st.markdown("---")
 
     st.markdown("## 🌐 Public")
+    # Sidebar buttons (snippets)
     if st.button("🐶 Dogtopia", use_container_width=True):
-        set_params(page="dogtopia", dog=None); st.rerun()    
-    st.button("🐱 Catopia",    use_container_width=True, on_click=go, args=("catopia",))
-    st.button("🏡 Sheltopia",  use_container_width=True, on_click=go, args=("sheltopia",))
+        set_params(page="dogtopia", dog=None, cat=None, shelter=None); st.rerun()
+
+    if st.button("🐱 Catopia", use_container_width=True):
+        set_params(page="catopia", dog=None, cat=None, shelter=None); st.rerun()
+
+    if st.button("🏡 Sheltopia", use_container_width=True):
+        set_params(page="sheltopia", dog=None, cat=None, shelter=None); st.rerun()
+
     st.markdown("---")
 
     st.markdown("## 🔐 Admin")
@@ -129,13 +133,19 @@ def qp_get(name, default=None):
         val = val[0] if val else None
     return default if val in (None, "") else val
 
-
 # ---------- Router ----------
 page = (qp_get("page", "landing") or "landing").lower()
 dog  = qp_get("dog", "")
+cat  = qp_get("cat", "")
+shelter = qp_get("shelter", "")
 
+# Deep-link override: if a specific animal/page is requested, force that detail page
 if dog and page != "dog":
     page = "dog"
+elif cat and page != "cat":
+    page = "cat"
+elif shelter and page != "shelter":
+    page = "shelter"
 
 if page == "landing":
     from page_components import Landing_Page
@@ -191,11 +201,28 @@ elif page == "earnings_and_expenses":
 
 elif page == "dog":
     from page_components import Dog_Page as Dog_Page_Module
-    dog_param = qp_get("dog", None)  # <-- use the helper you already defined
+    dog_param = qp_get("dog", None)
     if not dog_param:
         st.warning("No dog specified. Add ?page=dog&dog=Name to the URL.")
     else:
         Dog_Page_Module.main(dog_param)
+
+elif page == "cat":
+    from page_components import Cat_Page as Cat_Page_Module
+    cat_param = qp_get("cat", None)
+    if not cat_param:
+        st.warning("No cat specified. Add ?page=cat&cat=Name to the URL.")
+    else:
+        Cat_Page_Module.main(cat_param)
+
+elif page == "shelter":
+    from page_components import Shelter_Page as Shelter_Page_Module
+    shelter_param = qp_get("shelter", None)
+    if not shelter_param:
+        st.warning("No shelter pet specified. Add ?page=shelter&shelter=Name to the URL.")
+    else:
+        Shelter_Page_Module.main(shelter_param)
+
 
 else:
     from page_components import Landing_Page
