@@ -156,6 +156,7 @@ elif page == "dogtopia":
     Dogtopia.main()
 
 elif page == "catopia":
+    
     from page_components import Catopia
     Catopia.main()
 
@@ -165,8 +166,8 @@ elif page == "sheltopia":
 
 elif page == "data_visualization":
     if st.session_state.admin_authed:
-        from page_components import Data_Visualization1
-        Data_Visualization1.main()
+        from page_components import Data_Visualization
+        Data_Visualization.main()
     else:
         st.warning("Admin area is locked.")
         from page_components import Landing_Page
