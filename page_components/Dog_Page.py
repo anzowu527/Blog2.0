@@ -262,27 +262,22 @@ def main(dog_name: str):
         height=680,
     )
 
-    # === Dog Stories ===
-    stories = {
-        "appa": """
-        **Appa** is our fluffy cloud of joy. Ever since his first visit, he's captured hearts with his laid-back
-        attitude and goofy zoomies. Whether he's chilling on the grass or nudging us for treats, Appa reminds us
-        daily to take things slow and enjoy the moment.
-        """,
-        "archie": """
-        **Archie** is an explorer at heart. He's always the first to investigate new toys, sniff out every corner of
-        the play area, and greet every guest like royalty. His energy is infectious and his loyalty unmatched.
-        """,
-        "milo": """
-        **Milo** is the quiet charmer. With those deep eyes and gentle paws, he wins affection without making a sound.
-        He's a nap-time enthusiast, a belly-rub addict, and a friend to every pup who crosses his path.
-        """,
-        # Add more stories here...
-    }
+    # --- Dog stories (externalized) ---
+    try:
+        # live-reload friendly import
+        import importlib
+        from .stories import dog_stories
+        importlib.reload(dog_stories)  # so edits to dog_stories.py show up on rerun
+        get_dog_story = dog_stories.get_story
+    except Exception:
+        # fallback if the module isn't present
+        def get_dog_story(_name: str) -> str:
+            return "*This dog's story is still being written. Stay tuned!*"
 
     st.markdown("---")
-    dog_story = stories.get(true_dog_name.lower(), "*This dog's story is still being written. Stay tuned!*")
+    dog_story = get_dog_story(true_dog_name)
     st.markdown(dog_story)
+
 
     # === Prev / Back / Next Controls (alphabetical by folder name) ===
     all_dog_names_sorted = sorted([n for n in name_map.values()], key=lambda n: n.lower())
