@@ -86,6 +86,9 @@ with st.sidebar:
 
     st.markdown("## 🌐 Public")
     # Sidebar buttons (snippets)
+    if st.button("📈 Kingdom Stats", use_container_width=True):
+        set_params(page="kingdom_stats", dog=None, cat=None, shelter=None); st.rerun()
+
     if st.button("🐶 Dogtopia", use_container_width=True):
         set_params(page="dogtopia", dog=None, cat=None, shelter=None); st.rerun()
 
@@ -94,6 +97,9 @@ with st.sidebar:
 
     if st.button("🏡 Sheltopia", use_container_width=True):
         set_params(page="sheltopia", dog=None, cat=None, shelter=None); st.rerun()
+
+    if st.button("🧑‍🤝‍🧑 Members", use_container_width=True):
+        set_params(page="members", dog=None, cat=None, shelter=None); st.rerun()
 
     st.markdown("---")
 
@@ -163,6 +169,15 @@ elif page == "catopia":
 elif page == "sheltopia":
     from page_components import Sheltopia
     Sheltopia.main()
+
+elif page == "kingdom_stats":
+    from page_components import Kingdom_Stats
+    Kingdom_Stats.main()
+
+elif page == "members":
+    from page_components import Members
+    Members.main()
+
 
 elif page == "data_visualization":
     if st.session_state.admin_authed:

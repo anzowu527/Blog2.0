@@ -104,10 +104,32 @@ def main():
 
     earn_df = read_df_safe(EARNINGS_PATH)
     exp_df = read_df_safe(EXPENSES_PATH)
+    
+    # ---- Overall date range across earnings + expenses ----
+    def overall_date_range(frames):
+        mins, maxs = [], []
+        for df_ in frames:
+            if df_ is None or df_.empty:
+                continue
+            for col in df_.columns:
+                lc = col.lower()
+                if ("date" in lc) or ("time" in lc):
+                    s = pd.to_datetime(df_[col], errors="coerce")
+                    if s.notna().any():
+                        mins.append(s.min()); maxs.append(s.max())
+        if not mins or not maxs:
+            return None, None
+        return min(mins), max(maxs)
 
-    # ---------- Earnings donut ----------
+    earliest_dt, latest_dt = overall_date_range([earn_df, exp_df])
+    earliest_str = earliest_dt.strftime("%Y-%m-%d") if pd.notna(earliest_dt) else "start"
+    latest_str   = latest_dt.strftime("%Y-%m-%d")   if pd.notna(latest_dt)   else "latest"
+
+    # ---------- Earnings donut (Received = sum Payment Received; Incoming = sum of negative diffs shown as positive) ----------
     earn_pairs = []
     colors = []
+    total_received = 0.0          # sum of Payment Received (all rows)
+    total_incoming_abs = 0.0      # absolute sum of negative (Payment Received - Price)
 
     if not earn_df.empty:
         price_col = get_col(earn_df, "Price")
@@ -123,38 +145,43 @@ def main():
                 plat_col = "__Platform__"
                 df[plat_col] = "Unknown"
 
-            # Use non-negative payments for slice math
-            df["pay_pos"] = df[pay_col].clip(lower=0)
-            df["incoming_pos"] = (df[price_col] - df["pay_pos"]).clip(lower=0)
+            # Row-wise diff: Payment Received - Price
+            df["diff"] = df[pay_col] - df[price_col]
 
-            platforms = df[plat_col].astype(str).str.strip().replace({"": "Unknown"}).unique().tolist()
+            # Totals per your definition
+            total_received = float(df[pay_col].sum())
+            total_incoming_abs = float((-df.loc[df["diff"] < 0, "diff"]).sum())  # abs of negatives
+
+            # Per-platform slices:
+            platforms = (
+                df[plat_col].astype(str).str.strip().replace({"": "Unknown"}).unique().tolist()
+            )
             platforms.sort()
 
-            # RECEIVED (browns)
             for i, p in enumerate(platforms):
                 sub = df[df[plat_col] == p]
-                received = sub["pay_pos"].sum()
-                if received > 0:
-                    earn_pairs.append({"value": round(received, 2), "name": f"{p} - Received"})
+                # Received slice: sum of Payment Received for that platform; do not plot negatives
+                received_val = float(sub[pay_col].sum())
+                if received_val > 0:
+                    earn_pairs.append({"value": round(received_val, 2), "name": f"{p} - Received"})
                     colors.append(BROWN[i % len(BROWN)])
 
-            # INCOMING (oranges)
             for i, p in enumerate(platforms):
                 sub = df[df[plat_col] == p]
-                incoming = sub["incoming_pos"].sum()
-                if incoming > 0:
-                    earn_pairs.append({"value": round(incoming, 2), "name": f"{p} - Incoming"})
+                # Incoming slice: positive sum of amounts still owed (abs of negative diffs)
+                incoming_abs = float((-sub.loc[sub["diff"] < 0, "diff"]).sum())
+                if incoming_abs > 0:
+                    earn_pairs.append({"value": round(incoming_abs, 2), "name": f"{p} - Incoming"})
                     colors.append(ORANGES[i % len(ORANGES)])
 
 
     earn_title = "Earnings Breakdown by Platform"
     earn_options, earn_h = donut_options(earn_title, earn_pairs, colors=colors)
 
-    # Center = match Visualization page: all-time Price + Tips (with same row inclusion rules)
-    total_revenue = compute_price_plus_tips_total(earn_df)
-
+    # Center text = Received + |Incoming| so it matches the (positive) slices
     if isinstance(earn_options.get("graphic"), list) and earn_options["graphic"]:
-        earn_options["graphic"][0]["style"]["text"] = f"Total\n${total_revenue:,.0f}"
+        center_total = sum(float(d.get("value") or 0) for d in earn_pairs)
+        earn_options["graphic"][0]["style"]["text"] = f"Total\n${center_total:,.0f}"
 
 
 
@@ -209,7 +236,9 @@ def main():
 
 
     # ---------- Layout ----------
-    st.markdown("## 💵 Earnings & Expenses Overview")
+    st.markdown(f"## 💵 Earnings & Expenses Overview")
+    st.caption(f"from {earliest_str} to {latest_str}")
+
     col1, col2 = st.columns([1, 1], gap="large")
     with col1:
         # Earnings donut: fixed center total (Price + Tips), no legend-total event
@@ -219,28 +248,114 @@ def main():
         # Expenses donut: keep dynamic total on legend selection
         st_echarts(options=exp_options, events=legend_total_events, height=f"{exp_h}px")
 
+    
+    # ---- Latest date across earnings/expenses for the projection label ----
+    def latest_date_from_frames(frames):
+        candidates = []
+        for df_ in frames:
+            if df_ is None or df_.empty:
+                continue
+            for col in df_.columns:
+                lc = col.lower()
+                if ("date" in lc) or ("time" in lc):
+                    s = pd.to_datetime(df_[col], errors="coerce")
+                    if s.notna().any():
+                        candidates.append(s.max())
+        return max(candidates) if candidates else None
 
-    # ---------- Net Saving line (centered) ----------
-    # Sum only the "Received" slices from the earnings donut
-    total_received = sum(
-        (item.get("value") or 0)
-        for item in earn_pairs
-        if isinstance(item.get("name"), str) and "received" in item["name"].lower()
-    )
+    latest_dt = latest_date_from_frames([earn_df, exp_df])
+    latest_dt_str = latest_dt.strftime("%Y-%m-%d") if pd.notna(latest_dt) else "latest"
 
-    # Sum all expense slices
-    total_expenses = sum((item.get("value") or 0) for item in exp_pairs)
-
+        # ---------- Totals: Received / Incoming / Net Saving + Future Net Saving ----------
+    total_expenses = sum(float(item.get("value") or 0) for item in exp_pairs)
     net_saving = total_received - total_expenses
+    future_net_saving = (total_received + total_incoming_abs) - total_expenses  # treat incoming as collected
 
     st.markdown(
         f"""
-        <div style='text-align:center; margin-top:20px;'>
-            <h2 style='color:#603D35;'>💡 Net Saving: ${net_saving:,.2f}</h2>
+        <div style="
+            display:flex; 
+            justify-content:center; 
+            gap:24px; 
+            margin: 10px 0 24px 0;
+            flex-wrap:wrap;
+        ">
+          <div style="
+              min-width:260px; 
+              background:#fff; 
+              border-radius:16px; 
+              padding:16px 20px; 
+              box-shadow:0 2px 8px rgba(0,0,0,0.06);
+              text-align:center;
+              border: 1px solid #eadad3;
+          ">
+            <div style="color:#92695F; font-size:14px; letter-spacing:.3px; text-transform:uppercase; font-weight:600;">
+              Total Received
+            </div>
+            <div style="color:#603D35; font-size:28px; font-weight:800; margin-top:6px;">
+              ${total_received:,.2f}
+            </div>
+          </div>
+
+          <div style="
+              min-width:260px; 
+              background:#fff; 
+              border-radius:16px; 
+              padding:16px 20px; 
+              box-shadow:0 2px 8px rgba(0,0,0,0.06);
+              text-align:center;
+              border: 1px solid #eadad3;
+          ">
+            <div style="color:#92695F; font-size:14px; letter-spacing:.3px; text-transform:uppercase; font-weight:600;">
+              Total Incoming (Unpaid)
+            </div>
+            <div style="color:#603D35; font-size:28px; font-weight:800; margin-top:6px;">
+              ${total_incoming_abs:,.2f}
+            </div>
+            <div style="color:#92695F; font-size:12px; margin-top:4px;">
+            </div>
+          </div>
+
+          <div style="
+              min-width:260px; 
+              background:#fff; 
+              border-radius:16px; 
+              padding:16px 20px; 
+              box-shadow:0 2px 8px rgba(0,0,0,0.06);
+              text-align:center;
+              border: 1px solid #eadad3;
+          ">
+            <div style="color:#92695F; font-size:14px; letter-spacing:.3px; text-transform:uppercase; font-weight:600;">
+              Net Saving (Received − Expenses)
+            </div>
+            <div style="color:#603D35; font-size:28px; font-weight:800; margin-top:6px;">
+              ${net_saving:,.2f}
+            </div>
+          </div>
+
+          <div style="
+              min-width:260px; 
+              background:#fff; 
+              border-radius:16px; 
+              padding:16px 20px; 
+              box-shadow:0 2px 8px rgba(0,0,0,0.06);
+              text-align:center;
+              border: 1px solid #eadad3;
+          ">
+            <div style="color:#92695F; font-size:14px; letter-spacing:.3px; text-transform:uppercase; font-weight:600;">
+              Future Net Saving (by {latest_dt_str})
+            </div>
+            <div style="color:#603D35; font-size:28px; font-weight:800; margin-top:6px;">
+              ${future_net_saving:,.2f}
+            </div>
+            <div style="color:#92695F; font-size:12px; margin-top:4px;">
+            </div>
+          </div>
         </div>
         """,
         unsafe_allow_html=True
     )
+
 
     # ---------- Expenses Management (no full refresh + correct dtypes) ----------
     st.markdown("### ➕ Add New Expense")

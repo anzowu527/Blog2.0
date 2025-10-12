@@ -145,7 +145,6 @@ def revenue_stacked_line_options_by_year(df, stack=True, focus_year=None, color_
     return options
 
 
-
 def main():
     st.set_page_config(page_title="📈 Kingdom Revenue", layout="wide")
 
@@ -251,6 +250,13 @@ def main():
         tdf["daily price"]   = pd.to_numeric(tdf.get("daily price"), errors="coerce")
         tdf["Species"]       = tdf.get("Species", "").astype(str).str.title().str.strip()
         tdf["Name"]          = tdf.get("Name", "").astype(str).str.strip()
+        # Normalize Type for robust matching: "Boarding", "Drop In"
+        def _norm_type(val):
+            s = str(val or "").strip().lower()
+            if s in {"boarding"}: return "Boarding"
+            if s.replace("-", "").replace(" ", "") == "dropin": return "Drop In"
+            return s.title() if s else ""
+        tdf["TypeNorm"] = tdf.get("Type", "").apply(_norm_type)
 
         # In house on op_ts: arrival < op_ts, departure >= op_ts
         in_house = tdf[(tdf["Arrival Date"] < op_ts) & (tdf["Departure Date"] >= op_ts)]
@@ -329,7 +335,7 @@ def main():
             st.subheader(f"📊 Operation — {op_day.strftime('%b %d, %Y')}")
             st.markdown("<div style='margin-bottom:20px;'></div>", unsafe_allow_html=True)
 
-            left, right, spacer = st.columns([1, 1, 0.1], gap="large")
+            left, right, spacer = st.columns([1, 2, 0.1], gap="large")
 
             with left:
                 st_echarts(options=options, height="500px")
@@ -362,62 +368,86 @@ def main():
             with right:
                 daily_rev = _build_daily_revenue(df)
                 if daily_rev.empty:
-                    st.info("No revenue data available for the current week.")
+                    st.info("No revenue data available for the current month.")
                 else:
-                    # Base week on selected op date
-                    today = op_ts
-                    days_since_sun = (today.weekday() + 1) % 7   # Sun=0, Mon=1, ...
-                    week_start = (today - pd.Timedelta(days=days_since_sun)).normalize()
-                    week_end   = week_start + pd.Timedelta(days=6)
+                    # ---- Current MONTH based on selected op date ----
+                    month_start = op_ts.replace(day=1).normalize()
+                    month_end   = (month_start + pd.offsets.MonthEnd(0)).normalize()
 
-                    week_frame = pd.DataFrame({'date': pd.date_range(week_start, week_end, freq='D')})
-                    week_data = (
-                        week_frame.merge(daily_rev, on='date', how='left')
-                                  .fillna({'daily_price': 0})
+                    month_frame = pd.DataFrame({'date': pd.date_range(month_start, month_end, freq='D')})
+                    month_data = (
+                        month_frame.merge(daily_rev, on='date', how='left')
+                                   .fillna({'daily_price': 0})
                     )
-                    week_total = float(week_data['daily_price'].sum())
+                    month_total = float(month_data['daily_price'].sum())
 
-                    current_week_chart = (
-                        alt.Chart(week_data)
-                        .mark_line(point=True)
-                        .encode(
-                            x=alt.X(
-                                'date:T',
-                                title='Date',
-                                axis=alt.Axis(format='%A'),
-                                scale=alt.Scale(domain=[week_start.to_pydatetime(), week_end.to_pydatetime()])
-                            ),
-                            y=alt.Y('daily_price:Q', title='Revenue ($)', scale=alt.Scale(zero=True)),
-                            tooltip=[
-                                alt.Tooltip('date:T', title='Date'),
-                                alt.Tooltip('daily_price:Q', title='Revenue', format=",.0f")
-                            ]
-                        )
-                        .properties(
-                            title=f"Current Week (Sun–Sat): {week_start.strftime('%b %d')} – {week_end.strftime('%b %d')} • Total ${week_total:,.0f}",
-                            width='container',
-                            height=420
-                        )
-                        .configure(background="transparent")
-                        .configure_view(fill="transparent")
+                    base = alt.Chart(month_data).properties(
+                        width='container', height=420
+                    ).encode(
+                        x=alt.X(
+                            'date:T',
+                            title='Date',
+                            axis=alt.Axis(format='%b %d'),
+                            scale=alt.Scale(domain=[month_start.to_pydatetime(), month_end.to_pydatetime()])
+                        ),
+                        y=alt.Y('daily_price:Q', title='Revenue ($)', scale=alt.Scale(zero=True))
                     )
-                    st.altair_chart(current_week_chart, use_container_width=True)
 
-            # -------- Controls: Prev / Today / Next (UNDER charts, ABOVE avatars) --------
-            c1, c2, c3, c4, c5 = st.columns([1.5,1.2,1,2,2])  # adjust ratios
+                    # Hover selection tied to the nearest point on mouseover
+                    hover = alt.selection_point(
+                        fields=['date'],
+                        nearest=True,
+                        on='mouseover',
+                        empty=False
+                    )
 
-            with c1:
-                if st.button("← Previous Day", key="op_prev_day"):
+                    line = base.mark_line(point=True).encode(
+                        tooltip=[
+                            alt.Tooltip('date:T', title='Date', format='%b %d, %Y'),
+                            alt.Tooltip('daily_price:Q', title='Revenue', format='$,.0f')
+                        ],
+                        color=alt.value('#1f77b4')
+                    ).add_params(hover)
+
+                    # Highlight the hovered point
+                    points = base.mark_point(size=80).encode(
+                        opacity=alt.condition(hover, alt.value(1), alt.value(0))
+                    )
+
+                    # Text label next to the hovered point showing the $ value
+                    labels = base.mark_text(align='left', dx=8, dy=-8).encode(
+                        text=alt.condition(hover, alt.Text('daily_price:Q', format='$,.0f'), alt.value('')),
+                        opacity=alt.condition(hover, alt.value(1), alt.value(0))
+                    )
+
+                    current_month_chart = (line + points + labels).properties(
+                        title=f"Current Month: {month_start.strftime('%b %d')} – {month_end.strftime('%b %d')} • Total ${month_total:,.0f}"
+                    ).configure(background="transparent").configure_view(fill="transparent")
+
+                    st.altair_chart(current_month_chart, use_container_width=True)
+
+
+            # -------- Controls: Prev / Today / Next (CENTERED & EVENLY SPACED) --------
+            st.markdown("<div style='margin:10px 0;'></div>", unsafe_allow_html=True)
+
+            #        [ left spacer ][ Prev ][ gap ][ Today ][ gap ][ Next ][ right spacer ]
+            left_sp, c_prev, gap1, c_today, gap2, c_next, right_sp = st.columns([2, 1, 0.5, 1, 0.5, 1, 2], gap="large")
+
+            with c_prev:
+                if st.button("← Prev. Day", key="op_prev_day"):
                     st.session_state.op_date = st.session_state.op_date - timedelta(days=1)
                     st.rerun()
-            with c2:
+
+            with c_today:
                 if st.button("Today", key="op_today"):
                     st.session_state.op_date = date.today()
                     st.rerun()
-            with c3:
+
+            with c_next:
                 if st.button("Next Day →", key="op_next_day"):
                     st.session_state.op_date = st.session_state.op_date + timedelta(days=1)
                     st.rerun()
+
 
             # -------- Under the graphs: Avatars of pets on op_day --------
             st.markdown(
@@ -442,6 +472,7 @@ def main():
 
             pets_today = (
                 tdf[
+                    (tdf["TypeNorm"] == "Boarding") &
                     (tdf["Arrival Date"] <= op_ts) &
                     (tdf["Departure Date"] >= op_ts)
                 ][["Name", "Species", "Arrival Date", "Departure Date"]]
@@ -502,6 +533,78 @@ def main():
                     '</div>'
                 )
                 st.markdown(container_html, unsafe_allow_html=True)
+                                # --- Today’s Drop-In (show only if any) ---
+                # Prefer a single-day "Date" column; otherwise use Arrival/Departure containment
+                date_cols = [c for c in tdf.columns if c.strip().lower() == "date"]
+                if date_cols:
+                    dcol = date_cols[0]
+                    tdf[dcol] = pd.to_datetime(tdf[dcol], errors="coerce").dt.normalize()
+                    dropin_today_mask = (tdf["TypeNorm"] == "Drop In") & (tdf[dcol] == op_ts)
+                else:
+                    dropin_today_mask = (
+                        (tdf["TypeNorm"] == "Drop In") &
+                        (tdf["Arrival Date"] <= op_ts) &
+                        (tdf["Departure Date"] >= op_ts)
+                    )
+
+                dropins_today = (
+                    tdf.loc[dropin_today_mask, ["Name", "Species"]]
+                    .dropna(subset=["Name"])
+                    .drop_duplicates()
+                    .sort_values(["Species", "Name"])
+                    .reset_index(drop=True)
+                )
+
+                if not dropins_today.empty:
+                    st.markdown(
+                        "<h3 style='text-align:left; color:#603D35; margin:18px 0 12px 0;'>🕒 Today’s Drop-In</h3>",
+                        unsafe_allow_html=True
+                    )
+
+                    # Same avatar card style as Pets in House
+                    AVATAR_SIZE = 72
+                    COL_GAP = 16
+                    ROW_GAP = 22
+                    cards_html = []
+
+                    for _, r in dropins_today.iterrows():
+                        name = str(r["Name"]).strip()
+                        shadow = "0 2px 6px rgba(0,0,0,.15)"  # neutral shadow for drop-ins
+                        path = _find_avatar_path(name)
+                        if path:
+                            img_tag = (
+                                f'<img src="data:image/*;base64,{_img_b64(path)}" '
+                                f'style="width:{AVATAR_SIZE}px;height:{AVATAR_SIZE}px;object-fit:cover;'
+                                f'border-radius:50%;box-shadow:{shadow};border:3px solid white;" />'
+                            )
+                        else:
+                            initials = (name[:2].upper() or "🐾")
+                            img_tag = (
+                                f'<div style="width:{AVATAR_SIZE}px;height:{AVATAR_SIZE}px;border-radius:50%;'
+                                f'background:#c8a18f;display:flex;align-items:center;justify-content:center;'
+                                f'color:white;font-weight:700;font-size:22px;box-shadow:{shadow};border:3px solid white;">'
+                                f'{initials}</div>'
+                            )
+
+                        card = (
+                            f'<div class="pet-card" '
+                            f'style="display:flex;flex-direction:column;align-items:center;row-gap:6px;">'
+                            f'{img_tag}'
+                            f'<div style="color:#603D35;font-weight:600;font-size:12px;text-align:center;max-width:{AVATAR_SIZE}px;'
+                            f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{name}</div>'
+                            f'</div>'
+                        )
+                        cards_html.append(card)
+
+                    container_html = (
+                        f'<div style="display:flex;flex-wrap:wrap;column-gap:{COL_GAP}px;row-gap:{ROW_GAP}px;'
+                        f'justify-content:flex-start;align-items:flex-start;">'
+                        + "".join(cards_html) +
+                        '</div>'
+                    )
+                    st.markdown(container_html, unsafe_allow_html=True)
+
+                # separator under both sections
                 st.markdown("---")
 
     except Exception as e:
