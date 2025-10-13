@@ -9,8 +9,17 @@ from streamlit_echarts import st_echarts, JsCode
 DATA_PATH = "data/combined.csv"
 
 # ---------------- Helpers ----------------
+def normalize_platform(val: str) -> str:
+    if pd.isna(val): return "Other"
+    s = str(val).strip().lower()
+    # common aliases you might have
+    if s in {"xhs", "小红书", "redbook", "little red book"}:
+        return "XHS"
+    if s in {"rover"}:
+        return "Rover"
+    return s.title()  # e.g., "Other"
+
 def _clean_money_like(series: pd.Series) -> pd.Series:
-    """Remove $, commas, spaces; coerce to float."""
     return (
         series.astype(str)
               .str.replace(r"[\$,]", "", regex=True)
@@ -19,55 +28,42 @@ def _clean_money_like(series: pd.Series) -> pd.Series:
               .pipe(pd.to_numeric, errors="coerce")
     )
 
-def compute_box_data(df: pd.DataFrame):
+def compute_box_data_by_species(df: pd.DataFrame):
     """
-    Build arrays for boxplots using your existing columns:
-      - Duration        <- 'Duration' column
-      - Price per stay  <- 'Price' (total per booking)
-      - Daily price     <- 'Daily Price' column
-    Filters out rows where Type contains 'drop' (Drop-In).
-    Each metric is computed independently (no cross-dropping).
+    Returns:
+      {
+        "Dog": {"Duration": [...], "Price": [...], "Daily Price": [...]},
+        "Cat": {"Duration": [...], "Price": [...], "Daily Price": [...]},
+      }
+    Uses existing columns, excludes Type contains 'drop'.
     """
-    svc_col    = get_service_col(df)
-    price_col  = get_first_existing(df, ["Price", "Total Price"])
-    dur_col    = get_first_existing(df, ["Duration", "Nights", "Days"])
-    daily_col  = get_first_existing(df, ["daily price"])
-
-    if not (dur_col or price_col or daily_col):
-        return None  # nothing to plot
+    svc_col   = get_service_col(df)
+    dur_col   = get_first_existing(df, ["Duration", "Nights", "Days"])
+    price_col = get_first_existing(df, ["Price", "Total Price", "Charge", "Amount"])
+    daily_col = get_first_existing(df, ["daily price", "DailyPrice", "Rate", "Price/Day", "Price Per Day"])
 
     x = df.copy()
-    # Exclude Drop-Ins if Type exists
     if svc_col:
-        svc = x[svc_col].astype(str).str.lower()
-        x = x[~svc.str.contains("drop", na=False)].copy()
+        x = x[~x[svc_col].astype(str).str.lower().str.contains("drop", na=False)].copy()
 
-    # ----- Duration (from column) -----
-    durations = []
-    if dur_col:
-        dur_vals = pd.to_numeric(x[dur_col], errors="coerce")
-        durations = [int(v) if float(v).is_integer() else float(v) for v in dur_vals.dropna().tolist()]
+    out = {"Dog": {"Duration": [], "Price": [], "Daily Price": []},
+           "Cat": {"Duration": [], "Price": [], "Daily Price": []}}
 
-    # ----- Price per stay (from Price column) -----
-    prices = []
-    if price_col:
-        price_vals = _clean_money_like(x[price_col]).dropna()
-        prices = [float(v) for v in price_vals.tolist()]
-
-    # ----- Daily price (from daily price column) -----
-    daily = []
-    if daily_col:
-        daily_vals = _clean_money_like(x[daily_col]).dropna()
-        daily = [float(v) for v in daily_vals.tolist()]
-
-    if not (durations or prices or daily):
-        return None
-
-    return {
-        "Duration": durations,
-        "Price": prices,
-        "Daily Price": daily,
-    }
+    for sp in ["Dog", "Cat"]:
+        sub = x[x["__SpeciesNorm__"] == sp].copy()
+        if dur_col and dur_col in sub:
+            d = pd.to_numeric(sub[dur_col], errors="coerce")
+            d = d[np.isfinite(d) & (d > 0)]                      # log-safe
+            out[sp]["Duration"] = [float(v) for v in d.tolist()]
+        if price_col and price_col in sub:
+            p = _clean_money_like(sub[price_col])
+            p = p[np.isfinite(p) & (p > 0)]                      # log-safe
+            out[sp]["Price"] = [float(v) for v in p.tolist()]
+        if daily_col and daily_col in sub:
+            r = _clean_money_like(sub[daily_col])
+            r = r[np.isfinite(r) & (r > 0)]                      # log-safe
+            out[sp]["Daily Price"] = [float(v) for v in r.tolist()]
+    return out
 
 
 def read_df_safe(path: str) -> pd.DataFrame:
@@ -390,112 +386,457 @@ def ec_sunburst(labels, values, title_text):
         }]
     }
 
-def ec_box_single(title_text: str, values, is_currency: bool = False, y_label: str = "", left_pad=72):
+
+def _true_five_num(values, log_safe=True):
+    """True five-number summary: min, Q1, median, Q3, max (no outlier capping)."""
+    import numpy as np
+    arr = []
+    for v in values or []:
+        try:
+            f = float(v)
+            if np.isfinite(f) and (f > 0 if log_safe else True):
+                arr.append(f)
+        except Exception:
+            pass
+    arr = np.asarray(arr, dtype=float)
+    n = arr.size
+    if n == 0:
+        return None
+    if n == 1:
+        v = float(arr[0])
+        return {"min": v, "q1": v, "med": v, "q3": v, "max": v, "n": 1}
+
+    q1  = float(np.percentile(arr, 25))
+    med = float(np.percentile(arr, 50))
+    q3  = float(np.percentile(arr, 75))
+    return {"min": float(arr.min()), "q1": q1, "med": med, "q3": q3, "max": float(arr.max()), "n": n}
+
+def render_summary_table_2cats(dog_stats, cat_stats,
+                               *, is_currency=False, unit="",
+                               pad_left=56, pad_right=16,
+                               dog_label="🐶 Dog", cat_label="🐱 Cat"):
+    def fmt(v):
+        if v is None: return "—"
+        return f"${v:,.0f}" if is_currency else f"{v:,.0f}{(' ' + unit) if unit else ''}"
+    def get(s, k): return fmt(s.get(k)) if s else "—"
+    def get_n(s):  return (s or {}).get("n", 0)
+
+    html = f"""
+    <style>
+    .ks-mini2 table, .ks-mini2 td, .ks-mini2 th {{ border: none; }}
+    .ks-mini2 th {{ font-weight: 600; text-align: center; padding: 4px 6px; }}
+    .ks-mini2 td {{ text-align: center; padding: 3px 8px; }}
+    .ks-mini2 td.stat {{ font-weight: 600; opacity:.85; }}
+    .ks-mini2 tr:nth-child(odd):not(.median) td {{ background: rgba(0,0,0,0.025); border-radius: 6px; }}
+    .ks-mini2 tr.median td {{ font-weight: 700; }}
+    </style>
+    <div style="padding-left:{pad_left}px;padding-right:{pad_right}px;">
+    <div class="ks-mini2">
+    <table style="width:100%; border-collapse:separate; border-spacing:0 4px;">
+    <colgroup>
+    <col style="width:100px" />
+    <col /><col />
+    </colgroup>
+    <thead>
+    <tr>
+    <th></th>
+    <th>{dog_label}</th>
+    <th>{cat_label}</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr><td class="stat">n</td>
+    <td>{get_n(dog_stats)}</td>
+    <td>{get_n(cat_stats)}</td></tr>
+    <tr><td class="stat">min</td>
+    <td>{get(dog_stats,"min")}</td>
+    <td>{get(cat_stats,"min")}</td></tr>
+    <tr><td class="stat">Q1</td>
+    <td>{get(dog_stats,"q1")}</td>
+    <td>{get(cat_stats,"q1")}</td></tr>
+    <tr class="median"><td class="stat">median</td>
+    <td>{get(dog_stats,"med")}</td>
+    <td>{get(cat_stats,"med")}</td></tr>
+    <tr><td class="stat">Q3</td>
+    <td>{get(dog_stats,"q3")}</td>
+    <td>{get(cat_stats,"q3")}</td></tr>
+    <tr><td class="stat">max</td>
+    <td>{get(dog_stats,"max")}</td>
+    <td>{get(cat_stats,"max")}</td></tr>
+    </tbody>
+    </table>
+    </div>
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+
+def ec_box_species_platform_4cats(
+    title_text: str,
+    rover_dog_vals, xhs_dog_vals,
+    rover_cat_vals, xhs_cat_vals,
+    *, is_currency=False, y_label="", log_scale=True
+):
     import numpy as np
 
-    def five_num_summary(vals):
-        # keep only finite numbers
+    def tukey_box_and_outliers(vals):
         arr = []
         for v in vals or []:
             try:
                 f = float(v)
-                if np.isfinite(f):
+                if np.isfinite(f) and f > 0:
                     arr.append(f)
             except Exception:
                 pass
         arr = np.asarray(arr, dtype=float)
-
-        n = arr.size
-        if n == 0:
-            return None
-        if n == 1:
-            v = float(arr[0])
-            return [v, v, v, v, v]
-
+        if arr.size == 0:
+            return None, []
+        if arr.size == 1:
+            v = float(arr[0]); return [v, v, v, v, v], []
         q1 = float(np.percentile(arr, 25))
         q2 = float(np.percentile(arr, 50))
         q3 = float(np.percentile(arr, 75))
         iqr = q3 - q1
-        lower = float(max(float(arr.min()), q1 - 1.5 * iqr))
-        upper = float(min(float(arr.max()), q3 + 1.5 * iqr))
-        return [round(lower, 4), round(q1, 4), round(q2, 4), round(q3, 4), round(upper, 4)]
+        low  = max(float(arr.min()), q1 - 1.5 * iqr)
+        high = min(float(arr.max()), q3 + 1.5 * iqr)
+        outs = arr[(arr < low) | (arr > high)].tolist()
+        return [round(low,4), round(q1,4), round(q2,4), round(q3,4), round(high,4)], outs
 
-    stats = five_num_summary(values)
-    y_axis = {"type": "value", "min": 0, "axisLabel": {"margin": 6}}
+    # Build in the same order as categories below
+    boxes = []
+    outs  = []
+    vals_list = [
+        ("Dog", "Rover", rover_dog_vals),
+        ("Dog", "XHS",   xhs_dog_vals),
+        ("Cat", "Rover", rover_cat_vals),
+        ("Cat", "XHS",   xhs_cat_vals),
+    ]
+    counts = {}
+    for i, (sp, plat, v) in enumerate(vals_list):
+        b, o = tukey_box_and_outliers(v)
+        boxes.append(b)
+        outs += [[i, float(y)] for y in o]
+        counts[(sp, plat)] = sum(1 for t in (v or []) if isinstance(t, (int, float)) and t > 0)
+
+    categories = ["Dog", "Dog", "Cat", "Cat"]
+
+    y_axis = {"type": "log", "logBase": 10, "axisLabel": {"margin": 4}} if log_scale else \
+             {"type": "value", "min": 0, "axisLabel": {"margin": 4}}
     if is_currency:
         y_axis["axisLabel"]["formatter"] = "${value}"
     elif y_label:
         y_axis["axisLabel"]["formatter"] = "{value} " + y_label
 
-    series_data = [] if stats is None else [stats]
+    # Platform color mapping
+    def color_for_cat(idx):
+        return "#8b5e3c" if idx in (0, 2) else "#f4cbba"  # Rover for 0,2 ; XHS for 1,3
+
+    # Per-item colors
+    item_styles = [{"itemStyle": {"color": color_for_cat(i), "borderColor": "#5a3b2e", "borderWidth": 1.2}}
+                   if boxes[i] else {}
+                   for i in range(4)]
 
     option = {
-        "title": {"text": title_text, "left": "center",
-                  "textStyle": {"fontSize": 14, "color": "#5a3b2e"}},
+        "title": {
+            "text": (
+                f"{title_text}  "
+
+            ),
+            "left": "center", "top": 8,
+            "textStyle": {"fontSize": 12, "color": "#5a3b2e"}
+        },
         "tooltip": {"show": False},
-        "grid": {"left": left_pad, "right": 24, "top": 48, "bottom": 36, "containLabel": True},
-        "xAxis": {"type": "category", "data": [title_text], "axisTick": {"alignWithLabel": True}},
+        "legend": {
+            "show": True,
+            "bottom": 0,
+            "data": ["Rover", "XHS"],
+            "textStyle": {"color": "#5a3b2e"}
+        },
+        "grid": {"left": 56, "right": 16, "top": 36, "bottom": 40, "containLabel": True},
+        "xAxis": {
+            "type": "category",
+            "data": categories,
+            "axisTick": {"show": False},
+            "axisLabel": {"margin": 6},
+        },
         "yAxis": y_axis,
-        "series": [{
-            "type": "boxplot",
-            "data": series_data,  # [] if no data -> renders nothing (no crash)
-            "itemStyle": {"color": "#f4cbba", "borderColor": "#8b5e3c", "borderWidth": 1.5},
-            "boxWidth": [20, 60],
-        }],
-        "animationDuration": 900,
-        "animationEasing": "cubicOut",
-        "legend": {"show": False},
+        "series": [
+            {
+                "name": "Boxes",
+                "type": "boxplot",
+                "data": [
+                    {"value": boxes[i], **item_styles[i]} if boxes[i] else None
+                    for i in range(4)
+                ],
+                "boxWidth": [16, 44],
+                "z": 2,
+            },
+            # Dummy legend markers (no data) so legend shows platform colors
+            {"name": "Rover", "type": "scatter", "data": [], "itemStyle": {"color": "#8b5e3c"}},
+            {"name": "XHS",   "type": "scatter", "data": [], "itemStyle": {"color": "#f4cbba"}},
+        ],
+        "animationDuration": 900, "animationEasing": "cubicOut",
     }
 
-    # Optional: show a subtle "No data" overlay when empty
-    if not series_data:
-        option["graphic"] = [{
-            "type": "text",
-            "left": "center",
-            "top": "middle",
-            "style": {"text": "No data", "fontSize": 14, "fill": "#8b5e3c"}
-        }]
+    if outs:
+        # Outliers align perfectly because their x matches the exact category index
+        option["series"].append({
+            "name": "Outliers",
+            "type": "scatter",
+            "data": outs,
+            "symbolSize": 7,
+            "itemStyle": {"color": "#5a3b2e"},
+            "z": 3,
+        })
 
+    if not any(boxes):
+        option["graphic"] = [{
+            "type": "text", "left": "center", "top": "middle",
+            "style": {"text": "No data", "fontSize": 12, "fill": "#8b5e3c"}
+        }]
     return option
 
-def five_num_summary_py(values):
-    """Pure-Python five-number summary + count/mean (JSON-safe)."""
-    import numpy as np
-    arr = np.asarray(values, dtype=float)
-    if arr.size == 0:
+def render_summary_table_4cats(dr_stats, dx_stats, cr_stats, cx_stats,
+                               *, is_currency=False, unit="",
+                               pad_left=56, pad_right=16):
+    def fmt(v):
+        if v is None: return "—"
+        return f"${v:,.0f}" if is_currency else f"{v:,.0f}{(' ' + unit) if unit else ''}"
+
+    def get(s, key):   return fmt(s.get(key)) if s else "—"
+    def get_n(s):      return (s or {}).get("n", 0)
+
+    headers = ["🐶 Rover", "🐶 XHS", "🐱 Rover", "🐱 XHS"]
+
+    html = f"""
+    <style>
+    .ks-mini table, .ks-mini td, .ks-mini th {{ border: none; }}
+    .ks-mini th {{ font-weight: 600; text-align: center; padding: 4px 6px; }}
+    .ks-mini td.stat {{ font-weight: 600; text-align: left; opacity:.85; padding: 3px 6px; }}
+    .ks-mini td.val  {{ text-align: center; padding: 3px 8px; }}
+    .ks-mini tr:nth-child(odd):not(.median) td.val {{ background: rgba(0,0,0,0.025); border-radius: 6px; }}
+    .ks-mini tr.median td.val {{ font-weight: 700; }}
+    </style>
+    <div style="padding-left:{pad_left}px;padding-right:{pad_right}px;">
+    <div class="ks-mini">
+    <table style="width:100%; border-collapse:separate; border-spacing:0 4px;">
+    <colgroup>
+    <col style="width:100px" />
+    <col /><col /><col /><col />
+    </colgroup>
+    <thead>
+    <tr>
+    <th></th>
+    <th>{headers[0]}</th>
+    <th>{headers[1]}</th>
+    <th>{headers[2]}</th>
+    <th>{headers[3]}</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr><td class="stat">n</td>
+    <td class="val">{get_n(dr_stats)}</td>
+    <td class="val">{get_n(dx_stats)}</td>
+    <td class="val">{get_n(cr_stats)}</td>
+    <td class="val">{get_n(cx_stats)}</td></tr>
+    <tr><td class="stat">min</td>
+    <td class="val">{get(dr_stats,"min")}</td>
+    <td class="val">{get(dx_stats,"min")}</td>
+    <td class="val">{get(cr_stats,"min")}</td>
+    <td class="val">{get(cx_stats,"min")}</td></tr>
+    <tr><td class="stat">Q1</td>
+    <td class="val">{get(dr_stats,"q1")}</td>
+    <td class="val">{get(dx_stats,"q1")}</td>
+    <td class="val">{get(cr_stats,"q1")}</td>
+    <td class="val">{get(cx_stats,"q1")}</td></tr>
+    <tr class="median"><td class="stat">median</td>
+    <td class="val">{get(dr_stats,"med")}</td>
+    <td class="val">{get(dx_stats,"med")}</td>
+    <td class="val">{get(cr_stats,"med")}</td>
+    <td class="val">{get(cx_stats,"med")}</td></tr>
+    <tr><td class="stat">Q3</td>
+    <td class="val">{get(dr_stats,"q3")}</td>
+    <td class="val">{get(dx_stats,"q3")}</td>
+    <td class="val">{get(cr_stats,"q3")}</td>
+    <td class="val">{get(cx_stats,"q3")}</td></tr>
+    <tr><td class="stat">max</td>
+    <td class="val">{get(dr_stats,"max")}</td>
+    <td class="val">{get(dx_stats,"max")}</td>
+    <td class="val">{get(cr_stats,"max")}</td>
+    <td class="val">{get(cx_stats,"max")}</td></tr>
+    </tbody>
+    </table>
+    </div>
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+# ---------- Revisit / Loyalty Helpers ----------
+def _arrival_col(df: pd.DataFrame):
+    return get_first_existing(df, ["Arrival Date", "Arrival", "Check-in", "Check In", "Start Date"])
+
+def prepare_visits_table(df: pd.DataFrame, name_col: str) -> pd.DataFrame:
+    """
+    Returns one row per visit with normalized keys:
+      __name_norm__, __species__, __plat__, __arr__ (datetime), __visit_idx__ (per pet)
+    Drop-Ins are excluded (boarding-focused loyalty).
+    Shelter dogs are already excluded earlier in main().
+    """
+    arr = _arrival_col(df)
+    plat = get_channel_col(df)
+    svc = get_service_col(df)
+    if not arr or not name_col:
+        return pd.DataFrame()
+
+    x = df.copy()
+    x = coerce_dates(x)
+    if svc:
+        x = exclude_dropins(x)
+
+    x["__name_norm__"] = safe_name_series(x[name_col])
+    x["__species__"]   = x["__SpeciesNorm__"]
+    x["__plat__"]      = x[plat].apply(normalize_platform) if plat else "Other"
+    x["__arr__"]       = pd.to_datetime(x[arr], errors="coerce")
+    x = x.dropna(subset=["__name_norm__", "__arr__"])
+    x = x.sort_values(["__name_norm__", "__arr__"], kind="stable")
+
+    # visit index per pet
+    x["__visit_idx__"] = (
+        x.groupby("__name_norm__")["__arr__"]
+         .rank(method="first")
+         .astype(int)
+    )
+    return x[["__name_norm__", "__species__", "__plat__", "__arr__", "__visit_idx__"]]
+
+def compute_revisit_metrics(vis: pd.DataFrame):
+    """
+    Computes:
+      - unique_pets, returning_pets, revisit_rate_pets
+      - total_visits, returning_visits, share_visits_from_returning
+      - first_to_second_days list, plus avg/median
+      - species splits for (new vs returning) unique pets
+    """
+    if vis.empty:
         return None
-    q1 = float(np.percentile(arr, 25))
-    q2 = float(np.percentile(arr, 50))
-    q3 = float(np.percentile(arr, 75))
-    iqr = q3 - q1
-    lower = float(max(float(arr.min()), q1 - 1.5 * iqr))
-    upper = float(min(float(arr.max()), q3 + 1.5 * iqr))
+
+    # Unique pets and returning flag
+    counts = vis.groupby("__name_norm__").size()
+    unique_pets = int(counts.shape[0])
+    returning_pets = int((counts >= 2).sum())
+    revisit_rate_pets = (returning_pets / unique_pets) if unique_pets else 0.0
+
+    # Visits that are 2nd+ (returning visits share)
+    total_visits = int(vis.shape[0])
+    returning_visits = int((vis["__visit_idx__"] >= 2).sum())
+    share_visits_from_returning = (returning_visits / total_visits) if total_visits else 0.0
+
+    # First-to-second visit gap per pet
+    second_rows = (
+        vis[vis["__visit_idx__"] == 2]
+          .set_index("__name_norm__")[["__arr__"]]
+          .rename(columns={"__arr__": "__arr2__"})
+    )
+    first_rows = (
+        vis[vis["__visit_idx__"] == 1]
+          .set_index("__name_norm__")[["__arr__", "__species__", "__plat__"]]
+          .rename(columns={"__arr__": "__arr1__"})
+    )
+    merged = first_rows.join(second_rows, how="inner")
+    gaps_days = (merged["__arr2__"] - merged["__arr1__"]).dt.days.dropna().astype(int)
+    gap_list = gaps_days.tolist()
+    avg_gap = float(np.mean(gap_list)) if len(gap_list) else float("nan")
+    med_gap = float(np.median(gap_list)) if len(gap_list) else float("nan")
+
+    # Species split (unique pets grouped as New vs Returning)
+    # Map each pet -> species by first row
+    pet_species = vis.sort_values("__arr__").groupby("__name_norm__").first()["__species__"]
+    pet_is_returning = (counts >= 2)
+    species_new = pet_species[~pet_is_returning].value_counts()
+    species_ret = pet_species[ pet_is_returning].value_counts()
+    species = ["Dog", "Cat"]
+    species_new_counts = [int(species_new.get(s, 0)) for s in species]
+    species_ret_counts = [int(species_ret.get(s, 0)) for s in species]
+
     return {
-        "min": round(lower, 2),
-        "Q1": round(q1, 2),
-        "median": round(q2, 2),
-        "Q3": round(q3, 2),
-        "max": round(upper, 2),
-        "count": int(arr.size),
-        "mean": round(float(arr.mean()), 2),
+        "unique_pets": unique_pets,
+        "returning_pets": returning_pets,
+        "revisit_rate_pets": revisit_rate_pets,
+        "total_visits": total_visits,
+        "returning_visits": returning_visits,
+        "share_visits_from_returning": share_visits_from_returning,
+        "gap_list": gap_list,
+        "avg_gap": avg_gap,
+        "med_gap": med_gap,
+        "species": species,
+        "species_new_counts": species_new_counts,
+        "species_ret_counts": species_ret_counts,
     }
 
-def fmt_stats_block(title, stats, currency=False, unit=""):
-    if not stats:
-        return f"**{title}**\n\n_No data_"
-    def f(x):
-        if currency:
-            return f"${x:,.2f}"
-        return f"{x:,.2f}{(' ' + unit) if unit else ''}"
-    return (
-        f"**{title}**  \n"
-        f"- min: **{f(stats['min'])}**  \n"
-        f"- Q1: **{f(stats['Q1'])}**  \n"
-        f"- median: **{f(stats['median'])}**  \n"
-        f"- Q3: **{f(stats['Q3'])}**  \n"
-        f"- max: **{f(stats['max'])}**  \n"
-        f"- mean: **{f(stats['mean'])}**"
-    )
+def _bin_time_to_return(days_list):
+    """
+    Buckets for first->second visit gap.
+    """
+    bins = [(0,14), (15,30), (31,60), (61,120), (121,365), (366, 10_000)]
+    labels = ["0–14", "15–30", "31–60", "61–120", "121–365", "366+"]
+    counts = [0]*len(bins)
+    for d in days_list or []:
+        for i,(lo,hi) in enumerate(bins):
+            if lo <= d <= hi:
+                counts[i] += 1
+                break
+    return labels, counts
+
+def ec_donut_new_vs_return(new_count: int, ret_count: int, title="Unique Pets"):
+    data = [{"name":"New (1 visit)","value":int(new_count)},
+            {"name":"Returning (≥2)","value":int(ret_count)}]
+    return {
+        "tooltip":{"trigger":"item","formatter":"{b}: {c} ({d}%)"},
+        "legend":{"show":False},
+        "title":{
+            "text": f"{new_count + ret_count}",
+            "subtext": title, "left":"center", "top":"38%",
+            "textStyle":{"fontSize":28,"fontWeight":"bold","color":"#5a3b2e"},
+            "subtextStyle":{"fontSize":14,"color":"#5a3b2e"},
+        },
+        "color":["#f4cbba","#8b5e3c"],
+        "series":[{
+            "type":"pie","radius":["35%","80%"],"center":["50%","45%"],
+            "itemStyle":{"borderRadius":8,"borderColor":"#fff","borderWidth":2},
+            "label":{"show":True,"formatter":"{b}: {c}"},
+            "data": data
+        }]
+    }
+
+def ec_stacked_species_new_vs_return(species, new_counts, ret_counts, title="Revisit by Species"):
+    return {
+        "title":{"text":title,"left":"center","top":0,
+                 "textStyle":{"fontSize":14,"color":"#5a3b2e"}},
+        "tooltip":{"trigger":"axis","axisPointer":{"type":"shadow"}},
+        "legend":{"bottom":0,"data":["New (1 visit)","Returning (≥2)"]},
+        "grid":{"left":56,"right":16,"top":40,"bottom":40,"containLabel":True},
+        "xAxis":{"type":"category","data":species},
+        "yAxis":{"type":"value"},
+        "series":[
+            {"name":"New (1 visit)","type":"bar","stack":"total","data":new_counts,
+             "itemStyle":{"color":"#f4cbba","borderRadius":[10,10,0,0]}},
+            {"name":"Returning (≥2)","type":"bar","stack":"total","data":ret_counts,
+             "itemStyle":{"color":"#8b5e3c","borderRadius":[10,10,0,0]}},
+        ]
+    }
+
+def ec_hist_time_to_return(labels, counts, title="Days to 2nd Visit"):
+    return {
+        "title":{"text":title,"left":"center","top":0,
+                 "textStyle":{"fontSize":14,"color":"#5a3b2e"}},
+        "tooltip":{"trigger":"axis"},
+        "grid":{"left":56,"right":16,"top":40,"bottom":40,"containLabel":True},
+        "xAxis":{"type":"category","data":labels},
+        "yAxis":{"type":"value"},
+        "series":[{"type":"bar","data":counts,"barWidth":28,
+                   "itemStyle":{"color":{"type":"linear","x":0,"y":0,"x2":0,"y2":1,
+                     "colorStops":[{"offset":0,"color":"#8b5e3c"},
+                                   {"offset":1,"color":"#f4cbba"}]},
+                     "borderRadius":[10,10,0,0]},
+                   "label":{"show":True,"position":"top","formatter":"{c}"}}]
+    }
 
 # ---------------- Main ----------------
 def main():
@@ -579,45 +920,134 @@ def main():
 
     st.markdown("---")
 
-    # ---------- Boarding Price & Duration Distributions ----------
-    box_data = compute_box_data(df)
-    if not box_data:
-        st.info("Missing columns or not enough boarding data to plot boxplots.")
-    else:
-        total_stays = len(box_data["Duration"])
-        st.subheader(f"Boarding Price & Duration Distributions – {total_stays} Stays")
-        st.caption("Excludes Drop-in Visits.")
+    # ---------- Boarding Price & Duration Distributions (log scale, shared axes) ----------
+    sp_data = compute_box_data_by_species(df)
+    st.subheader("Boarding Price & Duration Distributions (log scale)")
 
-        c1, c2, c3 = st.columns([1.15, 1, 1])
+    # one row, three even charts
+    c1, gap, c3 = st.columns([1,0.1, 1]) 
+
+    # --- Duration (days) ---
+    # discover columns once up here (reuse your earlier logic if you prefer)
+    dur_col   = get_first_existing(df, ["Duration", "Nights", "Days"])
+    rate_col  = get_first_existing(df, ["daily price", "DailyPrice", "Rate", "Price/Day", "Price Per Day"])
+    plat_col  = get_channel_col(df)
+
+    # --- Duration (days) split by Platform ---
+    with c1:
+        if dur_col and plat_col:
+            x = df[[dur_col, plat_col, "__SpeciesNorm__"]].copy()
+            x[dur_col] = pd.to_numeric(x[dur_col], errors="coerce")
+            x = x[np.isfinite(x[dur_col]) & (x[dur_col] > 0)]
+            x["__plat__"] = x[plat_col].apply(normalize_platform)
+
+            rover_dog = x.loc[(x["__plat__"] == "Rover") & (x["__SpeciesNorm__"] == "Dog"), dur_col].astype(float).tolist()
+            xhs_dog   = x.loc[(x["__plat__"] == "XHS")   & (x["__SpeciesNorm__"] == "Dog"), dur_col].astype(float).tolist()
+            rover_cat = x.loc[(x["__plat__"] == "Rover") & (x["__SpeciesNorm__"] == "Cat"), dur_col].astype(float).tolist()
+            xhs_cat   = x.loc[(x["__plat__"] == "XHS")   & (x["__SpeciesNorm__"] == "Cat"), dur_col].astype(float).tolist()
+
+            st_echarts(
+                ec_box_species_platform_4cats("Duration (days)",
+                                            rover_dog, xhs_dog, rover_cat, xhs_cat,
+                                            is_currency=False, y_label="days", log_scale=True),
+                height="320px"
+            )
+
+            dr_stats = _true_five_num(rover_dog or [], log_safe=True)  # Dog–Rover
+            dx_stats = _true_five_num(xhs_dog   or [], log_safe=True)  # Dog–XHS
+            cr_stats = _true_five_num(rover_cat or [], log_safe=True)  # Cat–Rover
+            cx_stats = _true_five_num(xhs_cat   or [], log_safe=True)  # Cat–XHS
+            render_summary_table_4cats(dr_stats, dx_stats, cr_stats, cx_stats,
+                                    is_currency=False, unit="days",
+                                    pad_left=56, pad_right=16)
+
+
+    
+    # --- Daily price split by Platform ---
+    with c3:
+        if rate_col and plat_col:
+            x = df[[rate_col, plat_col, "__SpeciesNorm__"]].copy()
+            x[rate_col] = _clean_money_like(x[rate_col])
+            x = x[np.isfinite(x[rate_col]) & (x[rate_col] > 0)]
+            x["__plat__"] = x[plat_col].apply(normalize_platform)
+
+            rover_dog = x.loc[(x["__plat__"] == "Rover") & (x["__SpeciesNorm__"] == "Dog"), rate_col].astype(float).tolist()
+            xhs_dog   = x.loc[(x["__plat__"] == "XHS")   & (x["__SpeciesNorm__"] == "Dog"), rate_col].astype(float).tolist()
+            rover_cat = x.loc[(x["__plat__"] == "Rover") & (x["__SpeciesNorm__"] == "Cat"), rate_col].astype(float).tolist()
+            xhs_cat   = x.loc[(x["__plat__"] == "XHS")   & (x["__SpeciesNorm__"] == "Cat"), rate_col].astype(float).tolist()
+
+            st_echarts(
+                ec_box_species_platform_4cats("Daily price",
+                                            rover_dog, xhs_dog, rover_cat, xhs_cat,
+                                            is_currency=True, log_scale=True),
+                height="320px"
+            )
+
+            dr_stats = _true_five_num(rover_dog or [], log_safe=True)
+            dx_stats = _true_five_num(xhs_dog   or [], log_safe=True)
+            cr_stats = _true_five_num(rover_cat or [], log_safe=True)
+            cx_stats = _true_five_num(xhs_cat   or [], log_safe=True)
+            render_summary_table_4cats(dr_stats, dx_stats, cr_stats, cx_stats,
+                                    is_currency=True,
+                                    pad_left=56, pad_right=16)
+
+    st.markdown("---")
+    # ---------- Revisit & Loyalty ----------
+    st.markdown("---")
+    st.subheader("Revisit & Loyalty")
+    st.caption("Excludes Drop in pets")
+
+    vis = prepare_visits_table(df, name_col)
+    if vis.empty:
+        st.info("Not enough dated visits to compute revisit metrics.")
+    else:
+        met = compute_revisit_metrics(vis)
+
+        # KPIs / story
+        new_count = met["unique_pets"] - met["returning_pets"]
+        ret_count = met["returning_pets"]
+        revisit_pct = f"{met['revisit_rate_pets']*100:,.1f}%"
+        returning_visit_share = f"{met['share_visits_from_returning']*100:,.1f}%"
+
+        c1, c2, c3 = st.columns([1,1,1])
 
         with c1:
-            st_echarts(
-                ec_box_single("Duration (days)", box_data["Duration"], y_label="days", left_pad=84),
-                height="360px"
-            )
-            st.markdown(
-                fmt_stats_block("Duration (days)", five_num_summary_py(box_data["Duration"]), currency=False, unit="days")
-            )
+            st.markdown("**Unique Pets: New vs Returning**")
+            st_echarts(ec_donut_new_vs_return(new_count, ret_count, title="Unique Pets"), height="360px")
 
         with c2:
+            st.markdown("**By Species: New vs Returning (unique pets)**")
             st_echarts(
-                ec_box_single("Price per stay", box_data["Price"], is_currency=True, left_pad=72),
+                ec_stacked_species_new_vs_return(
+                    met["species"],
+                    met["species_new_counts"],
+                    met["species_ret_counts"],
+                    title="Revisit by Species"
+                ),
                 height="360px"
-            )
-            st.markdown(
-                fmt_stats_block("Price per stay", five_num_summary_py(box_data["Price"]), currency=True)
             )
 
         with c3:
-            st_echarts(
-                ec_box_single("Daily price", box_data["Daily Price"], is_currency=True, left_pad=72),
-                height="360px"
-            )
-            st.markdown(
-                fmt_stats_block("Daily price", five_num_summary_py(box_data["Daily Price"]), currency=True)
-            )
+            labels, counts = _bin_time_to_return(met["gap_list"])
+            st.markdown("**How Fast Do They Return? (1st → 2nd visit)**")
+            st_echarts(ec_hist_time_to_return(labels, counts, title="Days to 2nd Visit"), height="360px")
 
-    st.markdown("---")
+        # Narrative summary (auto)
+        avg_gap_txt = "—" if np.isnan(met["avg_gap"]) else f"{met['avg_gap']:.1f} days"
+        med_gap_txt = "—" if np.isnan(met["med_gap"]) else f"{met['med_gap']:.0f} days"
+        dog_new, cat_new = met["species_new_counts"]
+        dog_ret, cat_ret = met["species_ret_counts"]
+
+        st.markdown(
+            f"""
+**What this tells us**
+
+- **Revisit rate (unique pets):** {revisit_pct} — {ret_count} of {met['unique_pets']} pets have stayed at least twice.  
+- **Share of visits from loyal customers:** {returning_visit_share} — {met['returning_visits']} of {met['total_visits']} total visits are from returning pets.  
+- **Time to come back:** median **{med_gap_txt}** (avg {avg_gap_txt}).  
+- **Species view:** Dogs returning **{dog_ret}** vs new **{dog_new}**; Cats returning **{cat_ret}** vs new **{cat_new}**.
+            """
+        )
 
     # ---------- Top 10 Pets by Visit Count (rose charts; Drop-Ins excluded) ----------
     st.subheader("Top 10 Pets by Visit Count")
