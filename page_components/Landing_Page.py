@@ -157,7 +157,7 @@ def main():
                 <div class="card">
                     <img src="data:image/png;base64,{profile_img}" class="avatar" />
                     <div class="name">AnQi Wu</div>
-                    <div class="title">Animal Kingdom CEO</div>
+                    <div class="title">Pawpaw Homestay</div>
                     <hr class="divider">
                     <div class="social-icons">
                         <a href="https://www.youtube.com/@anzowoo/videos" target="_blank" title="YouTube"><i class="fab fa-youtube"></i></a>
