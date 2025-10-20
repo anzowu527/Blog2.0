@@ -1190,17 +1190,22 @@ def build_premium_clients_rfmD(df: pd.DataFrame, title="💎 Premium Clients · 
             st.info("No VIP clients to display yet.")
 
 
-
-    # ---- details table — VIP→Bronze; only score columns (plus IDs)
+    # ---- details table — Only VIP & Gold; scores only
     order = pd.CategoricalDtype(categories=["VIP","Gold","Silver","Bronze"], ordered=True)
     rfm["Segment"] = rfm["Segment"].astype(order)
 
     show_cols = ["PetName","Species","Segment","RFM_Total","R_Score","F_Score","M_Score","D_Score"]
-    st.markdown("**Details** (scores only)")
-    st.dataframe(
-        rfm[show_cols].sort_values(["Segment","RFM_Total"], ascending=[True, False]),
-        use_container_width=True
-    )
+
+    rfm_top = rfm[rfm["Segment"].isin(["VIP","Gold"])]
+
+    st.markdown("**Details — VIP & Gold (scores only)**")
+    if rfm_top.empty:
+        st.info("No VIP or Gold clients to display yet.")
+    else:
+        st.dataframe(
+            rfm_top[show_cols].sort_values(["Segment","RFM_Total"], ascending=[True, False]),
+            use_container_width=True
+        )
 
 # ---------------- Main ----------------
 def main():
@@ -1283,9 +1288,11 @@ def main():
         )
 
     st.markdown("---")
+    build_premium_clients_rfmD(df, title="Top Clients by Visit Frequency & Spending")
+        
+    st.markdown("---")
 
     # ---------- Boarding Price & Duration Distributions (log scale, shared axes) ----------
-    sp_data = compute_box_data_by_species(df)
     st.subheader("Boarding Price & Duration Distributions (log scale)")
 
     # one row, three even charts
@@ -1358,7 +1365,6 @@ def main():
     st.markdown("---")
 
     # ---------- Revisit & Loyalty ----------
-    st.markdown("---")
     st.subheader("Revisit & Loyalty")
     st.caption("Excludes Drop in pets")
 
@@ -1413,9 +1419,10 @@ def main():
 - **Species view:** Dogs returning **{dog_ret}** vs new **{dog_new}**; Cats returning **{cat_ret}** vs new **{cat_new}**.
             """
         )
-    build_premium_clients_rfmD(df)
-    
 
+    st.markdown("---")
+
+    
     # ---------- Top 10 Breeds by Unique Pets (grouped by name first) — SUNBURST ----------
     st.subheader("Top 10 Breeds by Unique Pets")
     col_dog3, col_cat3 = st.columns(2)
