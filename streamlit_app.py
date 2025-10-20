@@ -1,6 +1,7 @@
 # streamlit_app.py
 import os
 import streamlit as st
+import logging
 
 st.set_page_config(
     page_title="Zoolotopia Dashboard",
@@ -52,6 +53,14 @@ section[data-testid="stSidebar"] button:hover {
 
 # ---------- Auth ----------
 ADMIN_PASSWORD = st.secrets.get("ADMIN_PASSWORD", "")
+
+logging.basicConfig(
+    level=logging.DEBUG,  # Set the log level
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.StreamHandler()  # This directs logs to the console
+    ]
+)
 
 def set_params(**updates):
     """Merge-style setter for query params. Pass None to remove a key."""

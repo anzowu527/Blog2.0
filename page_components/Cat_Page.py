@@ -5,6 +5,12 @@ import base64
 from typing import List, Dict
 import streamlit as st
 from streamlit.components.v1 import html
+from typing import List, Optional
+from image_config import BASE_IMAGE_URL
+import boto3
+from botocore.config import Config
+from botocore import UNSIGNED
+from botocore.exceptions import ClientError
 
 # ---------- Helpers ----------
 def encode_image_to_base64(image_path: str) -> str:
@@ -23,7 +29,71 @@ def go_back_to_sheltopia():
 
     st.rerun()
 
+def get_s3_filenames(
+    bucket: str,
+    prefix: str = "",
+    aws_profile: Optional[str] = None,
+    suffix: Optional[str] = None,
+    return_full_path: bool = False,
+    max_results: Optional[int] = None,
+) -> List[str]:
+    """
+    Return a list of object keys (filenames) under the given S3 prefix (folder).
 
+    Args:
+        bucket: S3 bucket name.
+        prefix: Prefix / "folder" to list under. Can be empty or end with '/'.
+        aws_profile: Optional AWS profile name (uses default session if None).
+        suffix: Optional suffix filter (e.g., '.jpg', '.csv').
+        return_full_path: If True, returns full S3 URIs like `s3://bucket/key`.
+        max_results: Optional overall maximum number of results to return.
+
+    Returns:
+        List of keys (or S3 URIs if return_full_path=True).
+    """
+    if not bucket:
+        raise ValueError("bucket must be provided")
+
+    session = boto3.Session(profile_name=aws_profile) if aws_profile else boto3.Session()
+    s3 = session.client("s3",config=Config(signature_version=UNSIGNED))
+
+    # Normalize prefix: no change required, list_objects_v2 accepts as-is
+    continuation_token = None
+    results: List[str] = []
+
+    try:
+        while True:
+            kwargs = {
+                "Bucket": bucket,
+                "Prefix": prefix,
+                "MaxKeys": 1000,  # page size
+            }
+            if continuation_token:
+                kwargs["ContinuationToken"] = continuation_token
+
+            resp = s3.list_objects_v2(**kwargs)
+
+            contents = resp.get("Contents", [])
+            for obj in contents:
+                key = obj["Key"]
+                if suffix and not key.endswith(suffix):
+                    continue
+                if return_full_path:
+                    results.append(f"s3://{bucket}/{key}")
+                else:
+                    results.append(key)
+
+                if max_results is not None and len(results) >= max_results:
+                    return results[:max_results]
+
+            if not resp.get("IsTruncated"):  # no more pages
+                break
+            continuation_token = resp.get("NextContinuationToken")
+    except ClientError:
+        # Re-raise, caller can catch and handle (or log)
+        raise
+
+    return results
 
 def get_dog_images(dog_name: str) -> List[Dict[str, str]]:
     """
@@ -37,14 +107,9 @@ def get_dog_images(dog_name: str) -> List[Dict[str, str]]:
     # Allowed image extensions (extend if needed)
     exts = {".webp", ".jpg", ".jpeg", ".png", ".gif"}
 
-    # Exclude exact "{dog_name}1.webp"
-    cover_name = f"{dog_name}1.webp"
-    candidates = [
-        p for p in folder.iterdir()
-        if p.is_file()
-        and p.suffix.lower() in exts
-        and p.name != cover_name
-    ]
+    candidates = get_s3_filenames(
+        bucket="annablog",
+        prefix=f"images/catopia/{dog_name}/")
 
     if not candidates:
         # Nothing to show after exclusion
@@ -58,8 +123,8 @@ def get_dog_images(dog_name: str) -> List[Dict[str, str]]:
     for p in picks:
         try:
             images.append({
-                "url": f"data:image/{p.suffix.lower().lstrip('.')};base64,{encode_image_to_base64(str(p))}",
-                "alt": f"{dog_name} - {p.name}",
+                "url": f"{BASE_IMAGE_URL}/{p}",
+                "alt": f"{dog_name} - {p}",
             })
         except Exception:
             # Skip unreadable files

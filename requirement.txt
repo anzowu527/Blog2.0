@@ -5,3 +5,4 @@ numpy
 matplotlib
 streamlit-echarts
 streamlit-calendar
+boto3
