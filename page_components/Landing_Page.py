@@ -47,7 +47,33 @@ def main():
                 display: flex;
                 align-items: center;
                 justify-content: center;
+                overflow: visible !important; /* allow the arc to show */
             }}
+
+            .card-wrap {{
+                position: relative;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: visible !important; /* <--- add this line */
+            }}
+
+            .stApp {{
+                overflow: visible !important; /* make Streamlit’s main area allow overflow */
+            }}
+
+            /* The curved title SVG sits above the card */
+            .arc-title {{
+                position: absolute;
+                /* Push it above the top edge of the card */
+                top: -50px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: min(88vw, 640px);
+                height: auto;
+                pointer-events: none; /* clicks pass through to the card */
+            }}
+
             .card {{
                 background: #c8a18f;
                 border: 4px solid #ffeada;
@@ -137,23 +163,103 @@ def main():
                 background: rgba(0, 0, 0, 0.5);
                 z-index: 9998;
             }}
+            /* --- helper hint under the card --- */
+            .hint {{
+            margin-top: -100px;
+            font-family: 'American Typewriter', serif;
+            text-align: center;
+            color: #7a5a4b;          /* warm cocoa */
+            opacity: .95;
+            }}
+            .hint small {{
+            display: block;
+            margin-top: 4px;
+            font-size: 13px;
+            color: #a27763;
+            }}
+
+            /* Desktop vs mobile phrasing */
+            .desktop-hint {{ display: block; }}
+            .mobile-hint  {{ display: none; }}
+          
+
+            /* Small screens: bring the arc a little closer and shrink text slightly */
+            @media (max-width: 480px) {{
+                .arc-title {{ top: -90px; }}
+            }}
             </style>
 
             <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 
             <div class="container">
-                <div class="card">
-                    <img src="{profile_url}" class="avatar" alt="Profile" />
-                    <div class="name">AnQi Wu</div>
-                    <div class="title">Pawpaw Homestay</div>
-                    <hr class="divider">
-                    <div class="social-icons">
-                        <a href="https://www.youtube.com/@anzowoo/videos" target="_blank" title="YouTube"><i class="fab fa-youtube"></i></a>
-                        <a href="#" id="wechat-icon" title="WeChat"><i class="fab fa-weixin"></i></a>
-                        <a href="https://www.linkedin.com/in/anqi-wu-6a2991236/" target="_blank" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
-                        <a href="https://github.com/anzowu527" target="_blank" title="GitHub"><i class="fab fa-github"></i></a>
+                <div class="card-wrap">
+                    <!-- Curved themed title (flatter + full text visible) -->
+                    <svg class="arc-title"
+                        viewBox="0 -40 600 240"
+                        preserveAspectRatio="xMidYMid meet"
+                        aria-hidden="true"
+                        style="overflow:visible"
+                        xmlns="http://www.w3.org/2000/svg"
+                        xmlns:xlink="http://www.w3.org/1999/xlink">
+                    <defs>
+
+                        <!-- Flatter arc: higher y value = gentler curve -->
+                        <path id="arcPath" d="M-100 100 A 350 280 0 0 1 600 100" />
+
+                        <!-- Pawpaw gradient -->
+                        <linearGradient id="pawpaw" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%"   stop-color="#f4cbba"/>
+                        <stop offset="35%"  stop-color="#c8a18f"/>
+                        <stop offset="70%"  stop-color="#a27763"/>
+                        <stop offset="100%" stop-color="#5a3b2e"/>
+                        </linearGradient>
+
+                        <!-- Glow outline -->
+                        <filter id="glow" filterUnits="userSpaceOnUse" x="-150" y="-150" width="900" height="400">
+                        <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur"/>
+                        <feMerge>
+                            <feMergeNode in="blur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                        </filter>
+                    </defs>
+                    <g transform="translate(40,85)">
+                        <text font-family="'American Typewriter', serif" font-size="52" font-weight="800" letter-spacing="2" filter="url(#glow)">
+                        <textPath href="#arcPath" xlink:href="#arcPath" startOffset="50%" text-anchor="middle"
+                                    stroke="#ffeada" stroke-width="3" fill="none">
+                            Welcome to Paw🐾Paw Homestay
+                        </textPath>
+                        </text>
+
+                        <text font-family="'American Typewriter', serif" font-size="52" font-weight="800" letter-spacing="2">
+                        <textPath href="#arcPath" xlink:href="#arcPath" startOffset="50%" text-anchor="middle" fill="url(#pawpaw)">
+                            Welcome to Paw🐾Paw Homestay
+                        </textPath>
+                        </text>
+                    </g>
+                    
+                    </svg>
+
+                    <div class="card">
+                        <img src="{profile_url}" class="avatar" alt="Profile" />
+                        <div class="name">AnQi Wu</div>
+                        <div class="title">Pawpaw 🫧 CEO</div>
+                        <hr class="divider">
+                        <div class="social-icons">
+                            <a href="https://www.youtube.com/@anzowoo/videos" target="_blank" title="YouTube"><i class="fab fa-youtube"></i></a>
+                            <a href="#" id="wechat-icon" title="WeChat"><i class="fab fa-weixin"></i></a>
+                            <a href="https://www.linkedin.com/in/anqi-wu-6a2991236/" target="_blank" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
+                            <a href="https://github.com/anzowu527" target="_blank" title="GitHub"><i class="fab fa-github"></i></a>
+                        </div>
                     </div>
                 </div>
+            </div>
+
+            <div class="hint desktop-hint">⬅︎ Click the tabs on the left to explore
+                <small>Kingdom Stats · Dogtopia · Catopia · Sheltopia · Members</small>
+                </div>
+                <div class="hint mobile-hint">☰ Open the menu to explore
+                <small>Use the sidebar button to navigate</small>
             </div>
 
             <div class="overlay" id="overlay"></div>
@@ -197,8 +303,9 @@ def main():
             </script>
             """,
             height=750,
-            scrolling=False
+            scrolling=True
         )
+
 
 if __name__ == "__main__":
     main()

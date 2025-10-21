@@ -9,6 +9,14 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# --- Env + feature flags (NEW) ---
+ENV = os.getenv("APP_ENV", st.secrets.get("ENV", "prod")).lower()
+# If you ever want to test admin on a remote box, set this to true in secrets or env.
+ADMIN_ALLOW_REMOTE = bool(
+    str(os.getenv("ADMIN_ALLOW_REMOTE", st.secrets.get("ADMIN_ALLOW_REMOTE", "false"))).lower()
+    in {"1","true","yes","on"}
+)
+
 # --- Global CSS theme ---
 st.markdown("""
 <style>
@@ -55,11 +63,9 @@ section[data-testid="stSidebar"] button:hover {
 ADMIN_PASSWORD = st.secrets.get("ADMIN_PASSWORD", "")
 
 logging.basicConfig(
-    level=logging.DEBUG,  # Set the log level
+    level=logging.DEBUG,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.StreamHandler()  # This directs logs to the console
-    ]
+    handlers=[logging.StreamHandler()]
 )
 
 def set_params(**updates):
@@ -83,53 +89,74 @@ def set_params(**updates):
 def go(target: str, **extra):
     set_params(page=target, **extra)
 
+# --- Session flags ---
 if "admin_authed" not in st.session_state:
     st.session_state.admin_authed = False
 if "auth_error" not in st.session_state:
     st.session_state.auth_error = ""
 
+# In production, unless explicitly allowed, ensure the admin flag is OFF (defense-in-depth).
+if ENV != "local" and not ADMIN_ALLOW_REMOTE:
+    st.session_state.admin_authed = False
+
 # ---------- Sidebar ----------
 with st.sidebar:
-    st.button("🏠 Landing", use_container_width=True, on_click=go, args=("landing",))
+    # Environment ribbon (NEW)
+    if ENV == "local":
+        st.caption("🛠️ Local dev mode — admin pages enabled")
+
+    st.button("🏠 Main", use_container_width=True, on_click=go, args=("landing",))
     st.markdown("---")
 
-    st.markdown("## 🌐 Public")
-    # Sidebar buttons (snippets)
+    st.markdown("## Information")
+
+    if st.button("📖 About Pawpaw", use_container_width=True):
+        set_params(page="about", dog=None, cat=None, shelter=None); st.rerun()
+
+    if st.button("🛎️ Services", use_container_width=True):
+        set_params(page="service_info", dog=None, cat=None, shelter=None); st.rerun()
+
     if st.button("📈 Kingdom Stats", use_container_width=True):
         set_params(page="kingdom_stats", dog=None, cat=None, shelter=None); st.rerun()
+    
+    st.markdown("## Pawpaw Clients")
 
     if st.button("🐶 Dogtopia", use_container_width=True):
         set_params(page="dogtopia", dog=None, cat=None, shelter=None); st.rerun()
-
     if st.button("🐱 Catopia", use_container_width=True):
         set_params(page="catopia", dog=None, cat=None, shelter=None); st.rerun()
-
     if st.button("🏡 Sheltopia", use_container_width=True):
         set_params(page="sheltopia", dog=None, cat=None, shelter=None); st.rerun()
-
     if st.button("🧑‍🤝‍🧑 Members", use_container_width=True):
         set_params(page="members", dog=None, cat=None, shelter=None); st.rerun()
 
     st.markdown("---")
 
-    st.markdown("## 🔐 Admin")
-    if st.session_state.admin_authed:
-        st.button("📊 Data Visualization", use_container_width=True, on_click=go, args=("data_visualization",))
-        st.button("📝 Data Editor", use_container_width=True, on_click=go, args=("data_editor",))
-        st.button("📅 Calendar", use_container_width=True, on_click=go, args=("calendar",))
-        st.button("💰 Earnings and Expenses", use_container_width=True, on_click=go, args=("earnings_and_expenses",))
-        st.button("🔓 Log out Admin", use_container_width=True, on_click=lambda: st.session_state.update(admin_authed=False))
-    else:
-        pwd = st.text_input("Admin password", type="password", key="admin_pwd")
-        def try_unlock():
-            if ADMIN_PASSWORD and pwd == ADMIN_PASSWORD:
-                st.session_state.admin_authed = True
-                st.session_state.auth_error = ""
-            else:
-                st.session_state.auth_error = "Incorrect password."
-        st.button("Unlock Admin", use_container_width=True, on_click=try_unlock)
-        if st.session_state.auth_error:
-            st.error(st.session_state.auth_error)
+    # Show Admin section ONLY when allowed
+    admin_section_allowed = (ENV == "local") or ADMIN_ALLOW_REMOTE
+
+    if admin_section_allowed:
+        st.markdown("## 🔐 Admin")
+        if st.session_state.admin_authed or ENV == "local":
+            # In local, auto-allow admin to make dev easy
+            st.session_state.admin_authed = True
+
+            st.button("📊 Data Visualization", use_container_width=True, on_click=go, args=("data_visualization",))
+            st.button("📝 Data Editor", use_container_width=True, on_click=go, args=("data_editor",))
+            st.button("📅 Calendar", use_container_width=True, on_click=go, args=("calendar",))
+            st.button("💰 Earnings and Expenses", use_container_width=True, on_click=go, args=("earnings_and_expenses",))
+            st.button("🔓 Log out Admin", use_container_width=True, on_click=lambda: st.session_state.update(admin_authed=False))
+        else:
+            pwd = st.text_input("Admin password", type="password", key="admin_pwd")
+            def try_unlock():
+                if ADMIN_PASSWORD and pwd == ADMIN_PASSWORD:
+                    st.session_state.admin_authed = True
+                    st.session_state.auth_error = ""
+                else:
+                    st.session_state.auth_error = "Incorrect password."
+            st.button("Unlock Admin", use_container_width=True, on_click=try_unlock)
+            if st.session_state.auth_error:
+                st.error(st.session_state.auth_error)
 
 # ---------- Router helpers ----------
 def qp_get(name, default=None):
@@ -162,6 +189,23 @@ elif cat and page != "cat":
 elif shelter and page != "shelter":
     page = "shelter"
 
+# --- Helper: admin page guard (NEW) ---
+def guard_admin_page():
+    # If not local AND not explicitly allowed, block hard.
+    if ENV != "local" and not ADMIN_ALLOW_REMOTE:
+        st.warning("Admin area is disabled in production.")
+        from page_components import Landing_Page
+        Landing_Page.main()
+        return False
+    # If remote but allowed, still require session auth (unless local)
+    if not st.session_state.admin_authed and ENV != "local":
+        st.warning("Admin area is locked.")
+        from page_components import Landing_Page
+        Landing_Page.main()
+        return False
+    return True
+
+# --- Routes ---
 if page == "landing":
     from page_components import Landing_Page
     Landing_Page.main()
@@ -171,7 +215,6 @@ elif page == "dogtopia":
     Dogtopia.main()
 
 elif page == "catopia":
-    
     from page_components import Catopia
     Catopia.main()
 
@@ -183,46 +226,38 @@ elif page == "kingdom_stats":
     from page_components import Kingdom_Stats
     Kingdom_Stats.main()
 
+elif page == "about":
+    from page_components import About_Pawpaw
+    About_Pawpaw.main()
+
+elif page == "service_info":
+    from page_components import Service_Info
+    Service_Info.main()
+
+
 elif page == "members":
     from page_components import Members
     Members.main()
 
-
 elif page == "data_visualization":
-    if st.session_state.admin_authed:
+    if guard_admin_page():
         from page_components import Data_Visualization
         Data_Visualization.main()
-    else:
-        st.warning("Admin area is locked.")
-        from page_components import Landing_Page
-        Landing_Page.main()
 
 elif page == "data_editor":
-    if st.session_state.admin_authed:
+    if guard_admin_page():
         from page_components import Data_Editor
         Data_Editor.main()
-    else:
-        st.warning("Admin area is locked.")
-        from page_components import Landing_Page
-        Landing_Page.main()
 
 elif page == "calendar":
-    if st.session_state.admin_authed:
+    if guard_admin_page():
         from page_components import Calendar
         Calendar.main()
-    else:
-        st.warning("Admin area is locked.")
-        from page_components import Landing_Page
-        Landing_Page.main()
 
 elif page == "earnings_and_expenses":
-    if st.session_state.admin_authed:
+    if guard_admin_page():
         from page_components import Earnings_and_Expenses
         Earnings_and_Expenses.main()
-    else:
-        st.warning("Admin area is locked.")
-        from page_components import Landing_Page
-        Landing_Page.main()
 
 elif page == "dog":
     from page_components import Dog_Page as Dog_Page_Module
@@ -247,7 +282,6 @@ elif page == "shelter":
         st.warning("No shelter pet specified. Add ?page=shelter&shelter=Name to the URL.")
     else:
         Shelter_Page_Module.main(shelter_param)
-
 
 else:
     from page_components import Landing_Page
