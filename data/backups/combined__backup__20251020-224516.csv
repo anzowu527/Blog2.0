@@ -285,24 +285,24 @@ Rover,Boarding,Nacho,Domestic Short,Male,Cat,Yes,2024-07-16,2024-07-24,8.0,173.0
 Rover,Boarding,Indigo,Domestic Short,Female,Cat,Yes,2024-07-16,2024-07-24,8.0,212.6,212.6,Migo/Draco,,26.58,0.0,07/2024,5.0
 Rover,Boarding,Oreo,Domestic Short,Female,Cat,Yes,2024-07-16,2024-07-24,8.0,173.0,173.0,Nacho,,21.62,0.0,07/2024,6.0
 Rover,Boarding,Migo,Chihuahua,Male,Dog,Yes,2024-07-16,2024-07-24,8.0,212.6,212.6,Draco/Indigo,,26.58,0.0,07/2024,5.0
-Rover,Boarding,Draco,Domestic Short,Male,Cat,Yes,2024-07-16,2024-07-24,8.0,212.6,212.6,Migo/Indigo,,26.58,0.0,07/2024,5.0
+Rover,Boarding,Draco,Domestic Short,Male,Cat,Yes,2024-07-16,2024-07-24,8.0,212.6,212.6,Migo/Indigo,,26.58,0.0,07/2024,
 Rover,Drop In,Moomoo,Domestic Short,Male,Cat,Yes,2024-07-14,2024-07-20,4.0,80.0,80.0,,,20.0,0.0,07/2024,8.0
 xhs,Boarding,奶茶,Abyssinian,Female,Cat,yes,2024-07-13,2024-09-25,73.0,1250.0,1250.0,,一个月500，单天22,17.12,0.0,"07/2024, 08/2024, 09/2024",10.0
 Rover,Boarding,Migo,Chihuahua,Male,Dog,Yes,2024-07-09,2024-07-10,1.0,44.0,44.0,Draco/Indigo,,44.0,0.0,07/2024,5.0
-Rover,Boarding,Draco,Domestic Short,Male,Cat,Yes,2024-07-09,2024-07-10,1.0,44.0,44.0,Migo/Indigo,,44.0,0.0,07/2024,5.0
-Rover,Boarding,Indigo,Domestic Short,Female,Cat,Yes,2024-07-09,2024-07-10,1.0,44.0,44.0,Migo/Draco,,44.0,0.0,07/2024,5.0
-Rover,Boarding,Marty,Domestic Short,Male,Cat,Yes,2024-07-07,2024-07-14,7.0,376.6,376.6,,,53.8,0.0,07/2024,7.0
+Rover,Boarding,Draco,Domestic Short,Male,Cat,Yes,2024-07-09,2024-07-10,1.0,44.0,44.0,Migo/Indigo,,44.0,0.0,07/2024,
+Rover,Boarding,Indigo,Domestic Short,Female,Cat,Yes,2024-07-09,2024-07-10,1.0,44.0,44.0,Migo/Draco,,44.0,0.0,07/2024,
+Rover,Boarding,Marty,Domestic Short,Male,Cat,Yes,2024-07-07,2024-07-14,7.0,376.6,376.6,,,53.8,0.0,07/2024,
 Rover,Drop In,Moomoo,Domestic Short,Male,Cat,Yes,2024-07-07,2024-07-13,4.0,93.0,93.0,,,23.25,0.0,07/2024,8.0
-xhs,Boarding,栗子,Golden Retriever,Female,Dog,yes,2024-07-06,2024-07-08,3.0,105.0,105.0,,一天35,35.0,0.0,07/2024,2.0
-Rover,Drop In,Sophie,Domestic Short,Female,Cat,Yes,2024-07-04,2024-07-08,5.0,150.0,150.0,,,30.0,0.0,07/2024,10.0
-xhs,Boarding,Noel,Domestic Long,Male,Cat,yes,2024-07-03,2024-08-26,54.0,910.0,910.0,,一个月550，多的一天15,16.85,0.0,"07/2024, 08/2024",8.0
+xhs,Boarding,栗子,Golden Retriever,Female,Dog,yes,2024-07-06,2024-07-08,3.0,105.0,105.0,,一天35,35.0,0.0,07/2024,
+Rover,Drop In,Sophie,Domestic Short,Female,Cat,Yes,2024-07-04,2024-07-08,5.0,150.0,150.0,,,30.0,0.0,07/2024,
+xhs,Boarding,Noel,Domestic Long,Male,Cat,yes,2024-07-03,2024-08-26,54.0,910.0,910.0,,一个月550，多的一天15,16.85,0.0,"07/2024, 08/2024",
 Rover,Drop In,Moomoo,Domestic Short,Male,Cat,Yes,2024-07-01,2024-07-05,3.0,64.0,64.0,,,21.33,0.0,07/2024,8.0
-Rover,Drop In,Delia,Domestic Short,Female,Cat,Yes,2024-06-29,2024-07-01,4.0,140.0,140.0,,,35.0,0.0,06/2024,3.0
-xhs,Boarding,果果,Corgi,Male,Dog,no,2024-06-28,2024-08-10,45.0,1000.0,1000.0,,一个月650，单天35,22.22,0.0,"06/2024, 07/2024, 08/2024",3.0
-xhs,Boarding,Kia,Pomsky,Female,Dog,yes,2024-06-27,2024-08-26,60.0,1200.0,1200.0,,一个月600,20.0,0.0,"06/2024, 07/2024, 08/2024",2.0
-xhs,Boarding,小七,Domestic Short,Male,Cat,yes,2024-06-22,2024-07-01,10.0,172.6,172.6,福来/麻薯,,17.26,0.0,06/2024,4.0
-xhs,Boarding,福来,Domestic Short,Female,Cat,yes,2024-06-22,2024-07-01,10.0,172.6,172.6,麻薯/小七,,17.26,0.0,06/2024,4.0
-xhs,Boarding,麻薯,Pomeranian,Female,Dog,yes,2024-06-22,2024-07-01,10.0,172.6,172.6,福来/小七,,17.26,0.0,06/2024,4.0
-Rover,Drop In,Sophie,Domestic Short,Female,Cat,Yes,2024-06-22,2024-06-23,2.0,42.0,42.0,,,21.0,0.0,06/2024,10.0
-xhs,Boarding,Appa,Maltese Mixed,Male,Dog,no,2024-06-16,2024-06-21,6.0,210.0,210.0,,一天25,35.0,0.0,06/2024,2.0
-xhs,Boarding,Shyshy,Shiba Inu,Female,Dog,yes,2024-06-09,2024-08-25,77.0,1520.0,1520.0,,一个月600，多的一天23,19.74,0.0,"06/2024, 07/2024, 08/2024",7.0
+Rover,Drop In,Delia,Domestic Short,Female,Cat,Yes,2024-06-29,2024-07-01,4.0,140.0,140.0,,,35.0,0.0,06/2024,
+xhs,Boarding,果果,Corgi,Male,Dog,no,2024-06-28,2024-08-10,45.0,1000.0,1000.0,,一个月650，单天35,22.22,0.0,"06/2024, 07/2024, 08/2024",
+xhs,Boarding,Kia,Pomsky,Female,Dog,yes,2024-06-27,2024-08-26,60.0,1200.0,1200.0,,一个月600,20.0,0.0,"06/2024, 07/2024, 08/2024",
+xhs,Boarding,小七,Domestic Short,Male,Cat,yes,2024-06-22,2024-07-01,10.0,172.6,172.6,福来/麻薯,,17.26,0.0,06/2024,
+xhs,Boarding,福来,Domestic Short,Female,Cat,yes,2024-06-22,2024-07-01,10.0,172.6,172.6,麻薯/小七,,17.26,0.0,06/2024,
+xhs,Boarding,麻薯,Pomeranian,Female,Dog,yes,2024-06-22,2024-07-01,10.0,172.6,172.6,福来/小七,,17.26,0.0,06/2024,
+Rover,Drop In,Sophie,Domestic Short,Female,Cat,Yes,2024-06-22,2024-06-23,2.0,42.0,42.0,,,21.0,0.0,06/2024,
+xhs,Boarding,Appa,Maltese Mixed,Male,Dog,no,2024-06-16,2024-06-21,6.0,210.0,210.0,,一天25,35.0,0.0,06/2024,
+xhs,Boarding,Shyshy,Shiba Inu,Female,Dog,yes,2024-06-09,2024-08-25,77.0,1520.0,1520.0,,一个月600，多的一天23,19.74,0.0,"06/2024, 07/2024, 08/2024",
