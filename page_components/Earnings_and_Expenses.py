@@ -36,41 +36,53 @@ def compute_price_plus_tips_total(df: pd.DataFrame) -> float:
 
 
 def donut_options(title: str, data_pairs, colors=None, height_px=360):
-    # Build a legend.selected map where every item starts as selected = True
-    legend_selected = {d["name"]: True for d in data_pairs}
+    center_total = sum(float(d.get("value") or 0) for d in data_pairs)
 
     opt = {
         "title": {"text": title, "left": "center", "top": 0},
-        "tooltip": {"trigger": "item"},
-        "legend": {
-            "orient": "vertical",
-            "left": "left",
-            "top": "middle",
-            "selected": legend_selected,         # ✅ explicit selection state
-            "selectedMode": True,                # multiple selection enabled
-        },
+        # Hover shows amount only
+        "tooltip": {"trigger": "item", "formatter": "{b}: ${c}"},
+        "legend": {"show": False},
         "series": [{
             "name": title,
             "type": "pie",
             "radius": ["45%", "72%"],
+            "center": ["50%", "60%"],
+            "minAngle": 3,
             "avoidLabelOverlap": True,
             "itemStyle": {"borderRadius": 10, "borderColor": "#fff", "borderWidth": 2},
-            "label": {"show": False},
-            "emphasis": {"label": {"show": False}},
-            "labelLine": {"show": False},
+
+            # Pointers/labels: category only
+            "label": {
+                "show": True,
+                "position": "outside",
+                "alignTo": "labelLine",
+                "distanceToLabelLine": 8,
+                "formatter": "{b}",   # name only (no % or $)
+                "rich": {"b": {"fontWeight": 600}}
+            },
+            "labelLine": {
+                "show": True,
+                "length": 28,                       # radial segment (↑ pushes line start outward)
+                "length2": 28,                      # horizontal segment (↑ pushes text outward)
+                "smooth": 0.2
+            },
+            "labelLayout": {"hideOverlap": True},
+
             "data": data_pairs,
         }],
         "graphic": [{
             "id": "centerText",
             "type": "text",
             "left": "center",
-            "top": "middle",
+            "top": "53%",
             "style": {
-                "text": f"Total\n${sum(d['value'] for d in data_pairs):,.0f}",
+                "text": f"Total\n${center_total:,.0f}",
                 "textAlign": "center",
                 "fill": "#333",
                 "fontSize": 22,
                 "fontWeight": "bold",
+                "lineHeight": 26
             }
         }],
     }
@@ -199,42 +211,6 @@ def main():
     exp_title = "Total Expenses by Category"
     exp_options, exp_h = donut_options(exp_title, exp_pairs, colors=AUTUMN)
 
-    # ---------- One shared event for both charts ----------
-    legend_total_events = {
-        "legendselectchanged": """
-            function(params) {
-                var chart = this;
-                var option = chart.getOption();
-
-                // Prefer the full, current selection map from params
-                var selected = params.selected || {};
-                // Fallback: if for some reason it's empty, use legend[0].selected
-                if (Object.keys(selected).length === 0 && option.legend && option.legend.length) {
-                    selected = option.legend[0].selected || {};
-                }
-
-                var data = (option.series && option.series[0] && option.series[0].data) ? option.series[0].data : [];
-                var total = 0;
-
-                for (var i = 0; i < data.length; i++) {
-                    var name = data[i].name;
-                    // Default to true if item missing from the selected map
-                    var isOn = (selected.hasOwnProperty(name)) ? selected[name] : true;
-                    if (isOn) total += data[i].value;
-                }
-
-                var fmt = new Intl.NumberFormat('en-US', {maximumFractionDigits: 0});
-                chart.setOption({
-                    graphic: [{
-                        id: 'centerText',
-                        style: { text: "Total\\n$" + fmt.format(total) }
-                    }]
-                });
-            }
-        """
-    }
-
-
     # ---------- Layout ----------
     st.markdown(f"## 💵 Earnings & Expenses Overview")
     st.caption(f"from {earliest_str} to {latest_str}")
@@ -246,7 +222,7 @@ def main():
 
     with col2:
         # Expenses donut: keep dynamic total on legend selection
-        st_echarts(options=exp_options, events=legend_total_events, height=f"{exp_h}px")
+        st_echarts(options=exp_options, height=f"{exp_h}px")
 
     
     # ---- Latest date across earnings/expenses for the projection label ----
