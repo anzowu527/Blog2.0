@@ -856,14 +856,15 @@ def _pick_arr_dep_cols(df: pd.DataFrame):
 def _parse_dates_safe(s: pd.Series) -> pd.Series:
     return pd.to_datetime(s, errors="coerce", utc=False)
 
-def _rfm_quantile_scores(series: pd.Series, higher_is_better=True, bins=5) -> pd.Series:
+def _rfm_quantile_scores(series: pd.Series, higher_is_better=True, bins=10) -> pd.Series:
     s = series.copy()
     if not s.notna().any():
-        return pd.Series([3]*len(s), index=s.index, dtype=int)
+        return pd.Series([ (bins+1)//2 ]*len(s), index=s.index, dtype=int)  # center value (5 for 1..10)
     s = s.fillna(s.median())
     pct = s.rank(pct=True, method="average")
     score = (pct * bins).apply(np.ceil).astype(int) if higher_is_better else ((1 - pct) * bins).apply(np.ceil).astype(int)
     return score.clip(1, bins)
+
 
 def _days_between(a: pd.Timestamp, b: pd.Timestamp) -> float:
     if pd.isna(a) and pd.isna(b): return np.nan
@@ -978,11 +979,12 @@ def build_premium_clients_rfmD(df: pd.DataFrame, title="💎 Premium Clients · 
         axis=1
     )
 
-    # ---- scores 1..5 ----
-    rfm["R_Score"] = _rfm_quantile_scores(rfm["RecencyDays"], higher_is_better=False, bins=5)
-    rfm["F_Score"] = _rfm_quantile_scores(rfm["Frequency"],    higher_is_better=True,  bins=5)
-    rfm["M_Score"] = _rfm_quantile_scores(rfm["Monetary"],     higher_is_better=True,  bins=5)
-    rfm["D_Score"] = _rfm_quantile_scores(rfm["AvgDailyPrice"],higher_is_better=True,  bins=5)
+    # ---- scores 1..10 ----
+    rfm["R_Score"] = _rfm_quantile_scores(rfm["RecencyDays"], higher_is_better=False, bins=10)
+    rfm["F_Score"] = _rfm_quantile_scores(rfm["Frequency"],    higher_is_better=True,  bins=10)
+    rfm["M_Score"] = _rfm_quantile_scores(rfm["Monetary"],     higher_is_better=True,  bins=10)
+    rfm["D_Score"] = _rfm_quantile_scores(rfm["AvgDailyPrice"],higher_is_better=True,  bins=10)
+
 
     # weighted total; classic RFM if wD=0
     rfm["RFM_Total"] = (wR * rfm["R_Score"] +
@@ -993,14 +995,16 @@ def build_premium_clients_rfmD(df: pd.DataFrame, title="💎 Premium Clients · 
     # ---- segments
     def _segment(row):
         denom = (wR + wF + wM + wD) if (wR + wF + wM + wD) > 0 else 1.0
-        base = row.RFM_Total
-        if base >= denom*3.2 and row.F_Score >= 4 and row.M_Score >= 4:
+        base = row.RFM_Total  # weighted sum of 1..10 scores
+        # thresholds scaled from 5-point to 10-point (×2)
+        if base >= denom*6.4 and row.F_Score >= 8 and row.M_Score >= 8:
             return "VIP"
-        if base >= denom*2.6:
+        if base >= denom*5.2:
             return "Gold"
-        if base >= denom*2.0:
+        if base >= denom*4.0:
             return "Silver"
         return "Bronze"
+
     rfm["Segment"] = rfm.apply(_segment, axis=1)
 
     # ---- split key for readability
