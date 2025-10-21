@@ -2,11 +2,34 @@
 import os
 import pandas as pd
 import streamlit as st
+import unicodedata
+
+from image_config import BASE_IMAGE_URL
+from get_s3_images import _safe_join_url, _placeholder_for
 
 DATA_PATH = "data/combined.csv"
-PLACEHOLDER_WEB = "https://placehold.co/240x240/png?text=%F0%9F%90%BE"
 
-# ---------- helpers ----------
+BUCKET = "annablog"
+AVATAR_ROOT = "images/avatar/"   # s3://annablog/images/members/<MemberName>/*
+
+AVATAR_ROOT = "images/avatar/"   # s3://annablog/images/avatar/<lowercased-name>.webp
+
+# ---------- S3 avatar helpers (flat files, no indexing needed) ----------
+def _norm_lower(s: str) -> str:
+    return unicodedata.normalize("NFC", (s or "")).strip().lower()
+
+def avatar_url_for(member_name: str) -> str:
+    """
+    Returns public HTTPS URL to the member's avatar using the convention:
+      images/avatar/<lowercased name>.webp
+    Fallbacks to a placeholder if name empty.
+    """
+    if not member_name:
+        return _placeholder_for("Member")
+    key = f"{AVATAR_ROOT}{_norm_lower(member_name)}.webp"
+    return _safe_join_url(BASE_IMAGE_URL, key)
+
+# ---------- data helpers ----------
 def read_df_safe(path: str) -> pd.DataFrame:
     if not os.path.exists(path):
         return pd.DataFrame()
@@ -44,31 +67,6 @@ def title_name(name: str) -> str:
     except Exception:
         return str(name).title()
 
-def _avatar_candidates(name_key: str):
-    base = name_key.strip().lower()
-    variants = [
-        base,
-        base.replace(" ", ""),
-        base.replace(" ", "-"),
-        "".join(ch for ch in base if ch.isalnum()),
-    ]
-    seen = []
-    for v in variants:
-        if v and v not in seen:
-            seen.append(v)
-            yield os.path.join("images", "avatar", f"{v}.webp")
-
-def avatar_path_for_name(name_key: str):
-    for p in _avatar_candidates(name_key):
-        if os.path.exists(p):
-            return p
-    for v in _avatar_candidates(name_key):
-        for ext in (".png", ".jpg", ".jpeg"):
-            p = os.path.splitext(v)[0] + ext
-            if os.path.exists(p):
-                return p
-    return PLACEHOLDER_WEB
-
 def build_members(df: pd.DataFrame):
     name_col = get_first_existing(df, ["Name","Pet Name","Pet"])
     if not name_col:
@@ -101,7 +99,6 @@ def build_members(df: pd.DataFrame):
     if price_col:    df[price_col]    = pd.to_numeric(df[price_col], errors="coerce")
     if duration_col: df[duration_col] = pd.to_numeric(df[duration_col], errors="coerce")
 
-
     df["__name_key__"] = df[name_col].astype(str).str.strip().str.lower()
     groups = df.groupby("__name_key__", dropna=True)
 
@@ -112,20 +109,18 @@ def build_members(df: pd.DataFrame):
         gender  = most_common_nonempty(g[gender_col]) if gender_col else "Unknown"
         breed   = most_common_nonempty(g[breed_col]) if breed_col else "Unknown"
         platform= most_common_nonempty(g[platform_col]) if platform_col else "Unknown"
-        avatar  = avatar_path_for_name(key)
+        avatar  = avatar_url_for(display_name)  # <<< S3 URL or data-URL placeholder
 
         # ---- Metrics ----
         if arr_col and dep_col:
             valid = g[[arr_col, dep_col]].dropna()
             visits = len(valid[valid[dep_col] >= valid[arr_col]])
-            # nights = sum over visits of max((dep - arr).days, 0)
             nights = valid.apply(lambda r: max((r[dep_col] - r[arr_col]).days, 0), axis=1).sum()
             first_visit = g[arr_col].min()
         else:
             visits, nights, first_visit = 0, 0, pd.NaT
 
-        # ---- AvgDailyPrice = SUM(Price) / SUM(Duration) ----
-        # Primary path: use explicit Price and Duration columns if present.
+        # AvgDailyPrice = SUM(Price) / SUM(Duration)
         total_price = None
         total_duration = None
 
@@ -133,11 +128,9 @@ def build_members(df: pd.DataFrame):
             total_price = pd.to_numeric(g[price_col], errors="coerce").dropna().sum()
 
         if duration_col:
-            # Use only positive durations
             total_duration = pd.to_numeric(g[duration_col], errors="coerce").dropna()
             total_duration = total_duration[total_duration > 0].sum()
 
-        # Fallback for duration if we don't have a duration column: compute nights from dates
         if (total_duration is None or total_duration == 0) and (arr_col and dep_col):
             valid_dates = g[[arr_col, dep_col]].dropna()
             if not valid_dates.empty:
@@ -146,20 +139,16 @@ def build_members(df: pd.DataFrame):
                 )
                 total_duration = float(nights_series.sum())
 
-        # Last-resort fallback: if Price missing but have daily rate + duration, estimate total_price
         if (total_price is None or total_price == 0) and rate_col and total_duration and total_duration > 0:
-            # If you have per-visit durations, this is an approximation: rate * total_duration
             avg_rate = pd.to_numeric(g[rate_col], errors="coerce").dropna().mean()
             if pd.notna(avg_rate):
                 total_price = float(avg_rate) * float(total_duration)
 
-        # Compute average daily price
         if (total_price is not None) and pd.notna(total_price) and total_price > 0 and \
            (total_duration is not None) and pd.notna(total_duration) and total_duration > 0:
             avg_daily_price = float(total_price) / float(total_duration)
         else:
             avg_daily_price = float("nan")
-
 
         rows.append({
             "name_key": key,
@@ -168,7 +157,7 @@ def build_members(df: pd.DataFrame):
             "Gender": gender,
             "Breed": breed,
             "Platform": platform,
-            "Avatar": avatar,
+            "Avatar": avatar,            # <<< already browser-loadable
             "Visits": int(visits),
             "Nights": int(nights),
             "AvgDailyPrice": avg_daily_price,
@@ -186,25 +175,7 @@ def build_members(df: pd.DataFrame):
 
     return members
 
-
-import base64
-import mimetypes
-
-def _src_for_avatar(path_or_url: str) -> str:
-    """Return a browser-loadable src. Local files -> data URI; http(s) kept as-is."""
-    if not path_or_url:
-        return PLACEHOLDER_WEB
-    s = str(path_or_url)
-    if s.startswith(("http://", "https://", "data:")):
-        return s
-    if os.path.exists(s):
-        mime, _ = mimetypes.guess_type(s)
-        mime = mime or "image/webp"
-        with open(s, "rb") as f:
-            b64 = base64.b64encode(f.read()).decode("utf-8")
-        return f"data:{mime};base64,{b64}"
-    return PLACEHOLDER_WEB
-
+# ---------- UI helpers ----------
 def grid_cards(df: pd.DataFrame, cards_per_row=6, img_size=140, label_col="Name", meta_col=None):
     if df.empty:
         st.info("No members match your filters yet.")
@@ -222,7 +193,7 @@ def grid_cards(df: pd.DataFrame, cards_per_row=6, img_size=140, label_col="Name"
         cols = st.columns(cards_per_row)
         for j, (_, row) in enumerate(df.iloc[i:i+cards_per_row].iterrows()):
             with cols[j]:
-                src   = _src_for_avatar(row.get("Avatar", PLACEHOLDER_WEB))
+                src   = row.get("Avatar", _placeholder_for("Member"))  # already URL or data-URL
                 label = row.get(label_col, row.get("Name", ""))
                 meta  = str(row.get(meta_col, "")) if meta_col else ""
 
@@ -243,44 +214,20 @@ def grid_cards(df: pd.DataFrame, cards_per_row=6, img_size=140, label_col="Name"
                 """
                 st.markdown(html, unsafe_allow_html=True)
 
-
 # ---------- page ----------
 def main():
     st.title("🧑‍🤝‍🧑 Members")
-    # --- Dark-brown accents for selected UI elements (tabs, multiselect chips, menus) ---
+    # --- brown accent styling ---
     st.markdown("""
     <style>
-    :root {
-        /* make Streamlit components use your brown as the primary accent */
-        --primary-color: #603D35;
-    }
-
-    /* Tabs: active/selected tab label + underline */
+    :root { --primary-color: #603D35; }
     [data-baseweb="tab-list"] > [role="tab"][aria-selected="true"] {
-        color: #603D35 !important;
-        border-bottom: 2px solid #603D35 !important;
+        color: #603D35 !important; border-bottom: 2px solid #603D35 !important;
     }
-    [data-baseweb="tab-list"] > [role="tab"]:focus {
-        outline-color: #603D35 !important;
-    }
-
-    /* Multiselect "selected chips" (the tokens shown after selection) */
-    .stMultiSelect [data-baseweb="tag"] {
-        background-color: #f4cbba !important;   /* soft peach to match your palette */
-        border-color: #e2b6a2 !important;
-        color: #3a251c !important;              /* dark/brown text */
-    }
-
-    /* Multiselect dropdown option when highlighted/selected */
-    .stMultiSelect [data-baseweb="menu"] [aria-selected="true"] {
-        background-color: #f6e7e0 !important;   /* light brown highlight */
-        color: #3a251c !important;
-    }
-
-    /* Checkbox / radio accent color (where supported) */
-    input[type="checkbox"]:checked, input[type="radio"]:checked {
-        accent-color: #603D35;
-    }
+    [data-baseweb="tab-list"] > [role="tab"]:focus { outline-color: #603D35 !important; }
+    .stMultiSelect [data-baseweb="tag"] { background-color:#f4cbba !important; border-color:#e2b6a2 !important; color:#3a251c !important; }
+    .stMultiSelect [data-baseweb="menu"] [aria-selected="true"] { background-color:#f6e7e0 !important; color:#3a251c !important; }
+    input[type="checkbox"]:checked, input[type="radio"]:checked { accent-color:#603D35; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -343,7 +290,7 @@ def main():
         "First Visit date": {
             "col": "FirstVisit",
             "orders": [("Newest first", False), ("Oldest first", True)],
-            "metric": None,   # 👈 no info line under names for this one
+            "metric": None,
         },
     }
 
@@ -372,14 +319,13 @@ def main():
     elif metric_kind == "avg_price":
         view["MetricLine"] = view.apply(lambda r: f"{_fmt_money(r.get('AvgDailyPrice'))} / day", axis=1)
     else:
-        view["MetricLine"] = ""  # 👈 First Visit date and Name won't show extra info
+        view["MetricLine"] = ""
 
-    # --- order radio (bullet style) ---
+    # --- apply sorting ---
     order_labels = [lbl for (lbl, _) in cfg["orders"]]
     order_choice = st.radio("Order", order_labels, index=0, horizontal=True)
     ascending = dict(cfg["orders"])[order_choice]
 
-    # --- apply sorting ---
     sort_col = cfg["col"]
     view = view.sort_values(
         by=[sort_col, "Name"],
@@ -388,10 +334,8 @@ def main():
         na_position="last",
     )
 
-
     st.caption(f"Showing **{len(view)}** members")
     grid_cards(view, cards_per_row=8, img_size=140, label_col="Name", meta_col="MetricLine")
-
 
 
 if __name__ == "__main__":

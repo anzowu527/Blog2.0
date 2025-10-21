@@ -8,9 +8,29 @@ from matplotlib import cm
 import matplotlib.colors as mcolors
 from streamlit_echarts import st_echarts
 from datetime import datetime, timedelta, date
-import base64
-import os
+from image_config import BASE_IMAGE_URL
+from get_s3_images import _safe_join_url, _placeholder_for
+from image_config import BASE_IMAGE_URL
 
+# ---- S3 avatar config ----
+AVATAR_ROOT = "images/avatar/"  # s3://annablog/images/avatar/<lower-name>.webp
+
+def _norm_lower(s: str) -> str:
+    return (str(s) if s is not None else "").strip().lower()
+
+def avatar_url_for(member_name: str) -> str:
+    """
+    Build the avatar URL from the naming convention:
+      images/avatar/<lowercased name>.webp
+    Includes a couple safe fallbacks (no spaces / dashes) just in case.
+    """
+    if not member_name:
+        return _placeholder_for("Member")
+
+    base = _norm_lower(member_name)
+    # Primary convention first:
+    key = f"{AVATAR_ROOT}{base}.webp"
+    return _safe_join_url(BASE_IMAGE_URL, key)
 
 def revenue_chart(df, selected_month=None, color_scheme="blues", height=360):
     df = df.copy()
@@ -455,21 +475,6 @@ def main():
                 unsafe_allow_html=True
             )
 
-            def _find_avatar_path(name: str):
-                base_dir = "images/avatar"
-                if not name:
-                    return None
-                exts = [".webp", ".png", ".jpg", ".jpeg"]
-                for ext in exts:
-                    p = os.path.join(base_dir, f"{name}{ext}")
-                    if os.path.exists(p):
-                        return p
-                return None
-
-            def _img_b64(path: str):
-                with open(path, "rb") as f:
-                    return base64.b64encode(f.read()).decode("utf-8")
-
             pets_today = (
                 tdf[
                     (tdf["TypeNorm"] == "Boarding") &
@@ -502,19 +507,13 @@ def main():
                     else:
                         shadow = "0 2px 6px rgba(0,0,0,.15)"            # neutral
 
-                    path = _find_avatar_path(name)
-                    if path:
-                        img_tag = f'<img src="data:image/*;base64,{_img_b64(path)}" ' \
-                                  f'style="width:{AVATAR_SIZE}px;height:{AVATAR_SIZE}px;object-fit:cover;' \
-                                  f'border-radius:50%;box-shadow:{shadow};border:3px solid white;" />'
-                    else:
-                        initials = (name[:2].upper() or "🐾")
-                        img_tag = (
-                            f'<div style="width:{AVATAR_SIZE}px;height:{AVATAR_SIZE}px;border-radius:50%;'
-                            f'background:#c8a18f;display:flex;align-items:center;justify-content:center;'
-                            f'color:white;font-weight:700;font-size:22px;box-shadow:{shadow};border:3px solid white;">'
-                            f'{initials}</div>'
-                        )
+                    img_src = avatar_url_for(name)
+                    img_tag = (
+                        f'<img src="{img_src}" '
+                        f'style="width:{AVATAR_SIZE}px;height:{AVATAR_SIZE}px;object-fit:cover;'
+                        f'border-radius:50%;box-shadow:{shadow};border:3px solid white;" />'
+                    )
+
 
                     card = (
                         f'<div class="pet-card" '
@@ -570,21 +569,12 @@ def main():
                     for _, r in dropins_today.iterrows():
                         name = str(r["Name"]).strip()
                         shadow = "0 2px 6px rgba(0,0,0,.15)"  # neutral shadow for drop-ins
-                        path = _find_avatar_path(name)
-                        if path:
-                            img_tag = (
-                                f'<img src="data:image/*;base64,{_img_b64(path)}" '
-                                f'style="width:{AVATAR_SIZE}px;height:{AVATAR_SIZE}px;object-fit:cover;'
-                                f'border-radius:50%;box-shadow:{shadow};border:3px solid white;" />'
-                            )
-                        else:
-                            initials = (name[:2].upper() or "🐾")
-                            img_tag = (
-                                f'<div style="width:{AVATAR_SIZE}px;height:{AVATAR_SIZE}px;border-radius:50%;'
-                                f'background:#c8a18f;display:flex;align-items:center;justify-content:center;'
-                                f'color:white;font-weight:700;font-size:22px;box-shadow:{shadow};border:3px solid white;">'
-                                f'{initials}</div>'
-                            )
+                        img_src = avatar_url_for(name)
+                        img_tag = (
+                            f'<img src="{img_src}" '
+                            f'style="width:{AVATAR_SIZE}px;height:{AVATAR_SIZE}px;object-fit:cover;'
+                            f'border-radius:50%;box-shadow:{shadow};border:3px solid white;" />'
+                        )
 
                         card = (
                             f'<div class="pet-card" '

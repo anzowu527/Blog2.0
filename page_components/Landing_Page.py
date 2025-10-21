@@ -1,29 +1,30 @@
 import streamlit as st
-from pathlib import Path
-import base64
 import streamlit.components.v1 as components
-
-def get_base64(file_path: Path) -> str:
-    return base64.b64encode(file_path.read_bytes()).decode()
+from image_config import BASE_IMAGE_URL
+from get_s3_images import _safe_join_url  # uses URL-safe join with proper quoting
 
 def main():
-    profile_img = get_base64(Path("images/landing/anqi1.webp"))
-    qr_img = get_base64(Path("images/landing/vx.webp"))
+    # S3 keys for your assets
+    PROFILE_KEY = "images/landing/anqi1.webp"
+    QR_KEY      = "images/landing/vx.webp"
+
+    # Public HTTPS URLs (e.g., https://<cloudfront-or-bucket-site>/<key>)
+    profile_url = _safe_join_url(BASE_IMAGE_URL, PROFILE_KEY)
+    qr_url = _safe_join_url(BASE_IMAGE_URL, QR_KEY)
+
     # Make Streamlit's outer page match your landing bg
     st.markdown("""
     <style>
     /* App background (main area) */
     .stApp, [data-testid="stAppViewContainer"], 
     [data-testid="stAppViewContainer"] > .main {
-    background: #ffeada !important;
+      background: #ffeada !important;
     }
-
     /* Remove Streamlit’s default page padding so the card sits centered */
     [data-testid="block-container"]{
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
     }
-
     /* Remove the little status bar gradient at very top (optional) */
     header[data-testid="stHeader"] { background: transparent !important; }
     </style>
@@ -41,14 +42,12 @@ def main():
                 padding: 0;
                 background-color: #ffeada;
             }}
-
             .container {{
                 height: 100vh;
                 display: flex;
                 align-items: center;
                 justify-content: center;
             }}
-
             .card {{
                 background: #c8a18f;
                 border: 4px solid #ffeada;
@@ -60,7 +59,6 @@ def main():
                 color: white;
                 max-width: 320px;
             }}
-
             .avatar {{
                 width: 180px;
                 height: 180px;
@@ -68,20 +66,17 @@ def main():
                 border: 5px solid white;
                 object-fit: cover;
             }}
-
             .name {{
                 font-size: 28px;
                 font-weight: bold;
                 margin-top: 15px;
                 margin-bottom: 10px;
             }}
-
             .title {{
                 font-size: 18px;
                 color: #ffeada;
                 margin-bottom: 10px;
             }}
-
             .divider {{
                 border: none;
                 height: 2px;
@@ -90,22 +85,18 @@ def main():
                 width: 60%;
                 opacity: 0.7;
             }}
-
             .social-icons {{
                 margin-top: 15px;
             }}
-
             .social-icons a {{
                 margin: 0 15px;
                 font-size: 30px;
                 color: white;
                 text-decoration: none;
             }}
-
             .social-icons a:hover {{
                 color: #ffd5a4;
             }}
-
             .wechat-popup {{
                 display: none;
                 position: fixed;
@@ -119,14 +110,12 @@ def main():
                 box-shadow: 0 4px 15px rgba(0,0,0,0.3);
                 text-align: center;
             }}
-
             .wechat-popup img {{
                 width: 200px;
                 height: auto;
                 display: block;
                 margin: 0 auto 15px auto;
             }}
-
             .wechat-popup button {{
                 background-color: #c87b57;
                 color: white;
@@ -138,7 +127,6 @@ def main():
                 font-weight: bold;
                 width: 100%;
             }}
-
             .overlay {{
                 display: none;
                 position: fixed;
@@ -155,7 +143,7 @@ def main():
 
             <div class="container">
                 <div class="card">
-                    <img src="data:image/png;base64,{profile_img}" class="avatar" />
+                    <img src="{profile_url}" class="avatar" alt="Profile" />
                     <div class="name">AnQi Wu</div>
                     <div class="title">Pawpaw Homestay</div>
                     <hr class="divider">
@@ -170,7 +158,7 @@ def main():
 
             <div class="overlay" id="overlay"></div>
             <div class="wechat-popup" id="wechat-popup">
-                <img src="data:image/png;base64,{qr_img}" alt="WeChat QR Code" />
+                <img src="{qr_url}" alt="WeChat QR Code" />
                 <button id="close-btn">Close</button>
             </div>
 
@@ -210,4 +198,7 @@ def main():
             """,
             height=750,
             scrolling=False
-        ) 
+        )
+
+if __name__ == "__main__":
+    main()

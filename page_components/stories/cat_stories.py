@@ -1,0 +1,18 @@
+# page_components/stories/dog_stories.py
+CAT_STORIES = {
+    "abby": """
+**abby** is our fluffy cloud of joy. Ever since his first visit, he's captured hearts...
+""",
+    "athena": """
+**Archie** is an explorer at heart. He's always the first to investigate new toys...
+""",
+    "bella": """
+**Milo** is the quiet charmer. With those deep eyes and gentle paws...
+""",
+    # add more...
+}
+
+DEFAULT_STORY = "*This dog's story is still being written. Stay tuned!*"
+
+def get_story(name: str) -> str:
+    return CAT_STORIES.get((name or "").lower(), DEFAULT_STORY)
