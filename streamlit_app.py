@@ -70,10 +70,7 @@ logging.basicConfig(
 
 def set_params(**updates):
     """Merge-style setter for query params. Pass None to remove a key."""
-    try:
-        qp = dict(st.query_params)
-    except Exception:
-        qp = st.experimental_get_query_params()
+    qp = st.query_params
 
     for k, v in updates.items():
         if v is None:
@@ -81,10 +78,7 @@ def set_params(**updates):
         else:
             qp[k] = str(v)
 
-    try:
-        st.query_params = qp
-    except Exception:
-        st.experimental_set_query_params(**qp)
+    st.query_params = qp
 
 def go(target: str, **extra):
     set_params(page=target, **extra)
@@ -168,7 +162,7 @@ def qp_get(name, default=None):
         pass
     if val is None:
         try:
-            val = st.experimental_get_query_params().get(name)
+            val = st.query_params.get(name)
         except Exception:
             val = None
     if isinstance(val, list):
