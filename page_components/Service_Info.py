@@ -14,7 +14,6 @@ def _init_state():
         st.session_state.svc_view = DOG
     if "lang" not in st.session_state:
         st.session_state.lang = ZH  # 默认中文
-        st.session_state.lang = ZH       # default language: Chinese
 
 def _switch_to(tab: str):
     st.session_state.svc_view = tab
@@ -45,8 +44,7 @@ _STRINGS = {
     "faq_h3":           {ZH:"常见问题（FAQ）",             EN:"Frequently Asked Questions (FAQ)"},
 
     # dog page
-    "dog_intro":        {ZH:'欢迎来到 **Pawpaw Homestay**（🐶 狗狗服务）— 以下为服务、流程与小贴士。',
-                         EN:'Welcome to **Pawpaw Homestay** (🐶 Dog Services) — details on services, process, and tips below.'},
+    
     "dog_services_h3":  {ZH:"我们提供的服务（狗狗）",      EN:"Services We Provide (Dogs)"},
     "dog_services_ul":  {ZH:"- 🏡 **过夜寄养 Boarding**：家庭环境，规律作息与互动  \n- 🌞 **日托 Daycare**：白天寄托，固定散步与后院放风  \n- 🚶 **遛狗 Walks**：能量释放与嗅闻散步  \n- 🍽️ **投喂/加餐**：按既定食谱与时间  \n- 💊 **喂药**：按医嘱口服（需提前说明）",
                          EN:"- 🏡 **Boarding**: home setting with routine & interaction  \n- 🌞 **Daycare**: daytime care with walks & backyard time  \n- 🚶 **Walks**: sniffy walks for exercise  \n- 🍽️ **Feeding**: per your schedule/recipe  \n- 💊 **Medication**: oral per instruction (please inform in advance)"},
@@ -77,8 +75,7 @@ _STRINGS = {
                          EN:"Share allergies and diet in advance; we follow your checklist strictly."},
 
     # cat page
-    "cat_intro":        {ZH:'欢迎来到 **Pawpaw Homestay**（🐱 猫猫服务）— 以下为服务、流程与小贴士。',
-                         EN:'Welcome to **Pawpaw Homestay** (🐱 Cat Services) — details on services, process, and tips below.'},
+
     "cat_services_h3":  {ZH:"我们提供的服务（猫猫）",      EN:"Services We Provide (Cats)"},
     "cat_services_ul":  {ZH:"- 🏡 **过夜寄养 Boarding**：安静独立区，减压环境  \n- 🌞 **日托 Daycare**：短时看护与互动玩耍  \n- ✂️ **基础梳理**：温柔梳毛与清洁（按需）  \n- 🍽️ **投喂/加餐**：按既定食谱与时间  \n- 💊 **喂药**：按医嘱口服（需提前说明）",
                          EN:"- 🏡 **Boarding**: quiet private area, low-stress  \n- 🌞 **Daycare**: short-term care & play  \n- ✂️ **Basic grooming**: gentle brushing/cleaning (as needed)  \n- 🍽️ **Feeding**: per schedule/recipe  \n- 💊 **Medication**: oral per instruction (please inform in advance)"},
@@ -113,9 +110,9 @@ _STRINGS = {
 def _shared_css():
     st.markdown("""
     <style>
-      /* Scope to MAIN view so sidebar keeps default styles */
+      /* Buttons in header row */
       [data-testid="stAppViewContainer"] div[data-testid="stHorizontalBlock"] div.stButton > button {
-        background-color:#c8a18f !important;  /* brand warm brown */
+        background-color:#c8a18f !important;
         color:#fff !important;
         border:none !important;
         border-radius:10px !important;
@@ -130,73 +127,118 @@ def _shared_css():
         box-shadow:0 6px 14px rgba(0,0,0,.25) !important;
       }
       [data-testid="stAppViewContainer"] div[data-testid="stHorizontalBlock"] div.stButton > button:disabled{
-        opacity:1 !important;
-        cursor:default !important;
+        opacity:1 !important; cursor:default !important;
       }
 
       /* subtle divider */
       .divider{ border:none; border-top:1px solid rgba(0,0,0,.06); margin:16px 0; }
 
-      /* pills */
+      /* pills + note (keep original colors in main content) */
       .pill{
         display:inline-block; margin:4px 8px 0 0; padding:2px 8px; font-size:12px;
         background:rgba(200,161,143,.18); color:#5a3b2e; border-radius:12px;
       }
       .note{ color:#5a3b2e; font-size:12px; opacity:.9; }
+
+      /* ===== Plan B sidebar cards: 3D look (no glossy strip) ===== */
+      .sticky-wrap{ position: sticky; top: 12px; }
+      @media (max-width: 900px){ .sticky-wrap{ position: static; } }
+
+      .card-box{
+        position: relative;
+        border-radius:14px;
+        padding:16px 18px;
+        margin-bottom:14px;
+
+        /* 3D base */
+        background: linear-gradient(160deg, #c8a18f 0%, #b58b79 100%);
+        border:1px solid rgba(255,255,255,0.22);
+        box-shadow:
+          0 18px 36px -14px rgba(90, 59, 46, 0.40),  /* deeper drop for depth */
+          0 8px 18px rgba(0,0,0,0.10),               /* soft spread */
+          inset 0 1px 0 rgba(255,255,255,0.28),      /* gentle top inner highlight */
+          inset 0 -1px 0 rgba(0,0,0,0.06);           /* bottom inner shade */
+
+        /* Typography: body color is warm light, title is pure white */
+        color: #fff3e7; /* content color */
+        backdrop-filter: saturate(110%) contrast(102%);
+        transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+      }
+
+      /* hover lift */
+      .card-box:hover{
+        transform: translateY(-2px);
+        box-shadow:
+          0 22px 40px -14px rgba(90, 59, 46, 0.45),
+          0 10px 22px rgba(0,0,0,0.12),
+          inset 0 1px 0 rgba(255,255,255,0.30),
+          inset 0 -1px 0 rgba(0,0,0,0.08);
+      }
+
+      /* Title inside card: pure white for contrast */
+      .card-box h4{
+        margin:0 0 10px 0;
+        color:#ffffff !important;
+        letter-spacing:.2px;
+      }
+
+      /* Make sure lists, paragraphs, small text use the body color */
+      .card-box p, .card-box li, .card-box div, .card-box span {
+        color:#fff3e7 !important;
+      }
+
+      /* Links readable on the card */
+      .card-box a{ color:#ffffff; text-decoration: underline; }
+      .card-box a:hover{ text-decoration-thickness: 2px; }
+
+      /* compact list spacing inside cards */
+      .card-box ul{ margin:8px 0 0 18px; }
+      .card-box li{ margin:4px 0; }
     </style>
     """, unsafe_allow_html=True)
 
-# ---------------- Header (top-right lang toggle + dog/cat) ----------------
+
 # ---------------- Header (top-right lang toggle + dog/cat) ----------------
 def _header_with_toggle():
-    # 标题（左） + 语言按钮（右）
     c_title, c_lang = st.columns([1, 0.18])
     with c_title:
         st.markdown(f"## {T('title')}")
-
     with c_lang:
         next_label = "English" if st.session_state.lang == ZH else "中文"
-        st.button(
-            next_label,
-            key="btn_lang_toggle",
-            on_click=_toggle_lang,   # 用回调，避免状态切换需要二次点击
-        )
+        st.button(next_label, key="btn_lang_toggle", on_click=_toggle_lang)
 
     st.write("")
-
-    # Row 1: Dog / Cat nav (active one disabled, same color)
     left_sp, col_dog, center_gap, col_cat, right_sp = st.columns([2, 0.9, 0.05, 0.9, 2], gap="small")
-
     is_dog = st.session_state.svc_view == DOG
-    is_cat = not is_dog
-
     with col_dog:
-        st.button(
-            T("dog_btn"),
-            key="btn_dog",
-            disabled=is_dog,
-            on_click=_switch_to,
-            args=(DOG,),
-        )
-
+        st.button(T("dog_btn"), key="btn_dog", disabled=is_dog, on_click=_switch_to, args=(DOG,))
     with center_gap:
         st.write("")
-
     with col_cat:
-        st.button(
-            T("cat_btn"),
-            key="btn_cat",
-            disabled=is_cat,
-            on_click=_switch_to,
-            args=(CAT,),
-        )
+        st.button(T("cat_btn"), key="btn_cat", disabled=not is_dog, on_click=_switch_to, args=(CAT,))
 
+# ---------------- Sidebar (Plan B) ----------------
+def _sidebar_cards(kind: str):
+    """Right column sticky info cards."""
+    st.markdown("<div class='sticky-wrap'>", unsafe_allow_html=True)
 
-# ---------------- Views ----------------
+    st.markdown(f"<div class='card-box'><h4>{T('hours_area_h3')}</h4><div>{T('hours_area_body')}</div></div>", unsafe_allow_html=True)
+
+    if kind == DOG:
+        st.markdown(f"<div class='card-box'><h4>{T('dog_pack_h3')}</h4><div>{T('dog_pack_body')}</div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='card-box'><h4>{T('dog_require_h3')}</h4><div>{T('dog_require_body')}</div></div>", unsafe_allow_html=True)
+    else:
+        st.markdown(f"<div class='card-box'><h4>{T('cat_pack_h3')}</h4><div>{T('cat_pack_body')}</div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='card-box'><h4>{T('cat_require_h3')}</h4><div>{T('cat_require_body')}</div></div>", unsafe_allow_html=True)
+
+    st.markdown(f"<div class='card-box'><h4>{T('cancel_h3')}</h4><div>{T('cancel_body')}</div></div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# ---------------- Views (Plan B content stream + sticky sidebar) ----------------
 def _render_dog():
-    st.write(T("dog_intro"))
-    c1, c2 = st.columns([2,1])
-    with c1:
+    c_main, c_side = st.columns([1.8, 1], gap="large")
+
+    with c_main:
         st.markdown(f"### {T('dog_services_h3')}")
         st.markdown(T("dog_services_ul"))
         st.markdown(T("dog_skills_label"), unsafe_allow_html=True)
@@ -205,39 +247,29 @@ def _render_dog():
         st.markdown(f"### {T('dog_flow_h3')}")
         st.markdown(T("dog_flow_ol"))
 
-    with c2:
-        st.markdown(f"### {T('hours_area_h3')}")
-        st.write(T("hours_area_body"))
-        st.markdown(f"### {T('dog_pack_h3')}")
-        st.write(T("dog_pack_body"))
-        st.markdown(f"### {T('dog_require_h3')}")
-        st.write(T("dog_require_body"))
-
-    st.markdown("<hr class='divider'/>", unsafe_allow_html=True)
-    c3, c4 = st.columns(2)
-    with c3:
+        st.markdown("<hr class='divider'/>", unsafe_allow_html=True)
         st.markdown(f"### {T('pricing_h3')}")
         st.write(T("dog_price_body"))
         st.markdown(f"<span class='note'>{T('pricing_note')}</span>", unsafe_allow_html=True)
-    with c4:
-        st.markdown(f"### {T('cancel_h3')}")
-        st.write(T("cancel_body"))
 
-    st.markdown("<hr class='divider'/>", unsafe_allow_html=True)
-    st.markdown(f"### {T('faq_h3')}")
-    with st.expander(T("dog_faq1_q")):
-        st.write(T("dog_faq1_a"))
-    with st.expander(T("dog_faq2_q")):
-        st.write(T("dog_faq2_a"))
-    with st.expander(T("dog_faq3_q")):
-        st.write(T("dog_faq3_a"))
-    with st.expander(T("dog_faq4_q")):
-        st.write(T("dog_faq4_a"))
+        st.markdown("<hr class='divider'/>", unsafe_allow_html=True)
+        st.markdown(f"### {T('faq_h3')}")
+        with st.expander(T("dog_faq1_q")):
+            st.write(T("dog_faq1_a"))
+        with st.expander(T("dog_faq2_q")):
+            st.write(T("dog_faq2_a"))
+        with st.expander(T("dog_faq3_q")):
+            st.write(T("dog_faq3_a"))
+        with st.expander(T("dog_faq4_q")):
+            st.write(T("dog_faq4_a"))
+
+    with c_side:
+        _sidebar_cards(DOG)
 
 def _render_cat():
-    st.write(T("cat_intro"))
-    c1, c2 = st.columns([2,1])
-    with c1:
+    c_main, c_side = st.columns([1.8, 1], gap="large")
+
+    with c_main:
         st.markdown(f"### {T('cat_services_h3')}")
         st.markdown(T("cat_services_ul"))
         st.markdown(T("cat_skills_label"), unsafe_allow_html=True)
@@ -246,34 +278,24 @@ def _render_cat():
         st.markdown(f"### {T('cat_flow_h3')}")
         st.markdown(T("cat_flow_ol"))
 
-    with c2:
-        st.markdown(f"### {T('hours_area_h3')}")
-        st.write(T("hours_area_body"))
-        st.markdown(f"### {T('cat_pack_h3')}")
-        st.write(T("cat_pack_body"))
-        st.markdown(f"### {T('cat_require_h3')}")
-        st.write(T("cat_require_body"))
-
-    st.markdown("<hr class='divider'/>", unsafe_allow_html=True)
-    c3, c4 = st.columns(2)
-    with c3:
+        st.markdown("<hr class='divider'/>", unsafe_allow_html=True)
         st.markdown(f"### {T('pricing_h3')}")
         st.write(T("cat_price_body"))
         st.markdown(f"<span class='note'>{T('pricing_note')}</span>", unsafe_allow_html=True)
-    with c4:
-        st.markdown(f"### {T('cancel_h3')}")
-        st.write(T("cancel_body"))
 
-    st.markdown("<hr class='divider'/>", unsafe_allow_html=True)
-    st.markdown(f"### {T('faq_h3')}")
-    with st.expander(T("cat_faq1_q")):
-        st.write(T("cat_faq1_a"))
-    with st.expander(T("cat_faq2_q")):
-        st.write(T("cat_faq2_a"))
-    with st.expander(T("cat_faq3_q")):
-        st.write(T("cat_faq3_a"))
-    with st.expander(T("cat_faq4_q")):
-        st.write(T("cat_faq4_a"))
+        st.markdown("<hr class='divider'/>", unsafe_allow_html=True)
+        st.markdown(f"### {T('faq_h3')}")
+        with st.expander(T("cat_faq1_q")):
+            st.write(T("cat_faq1_a"))
+        with st.expander(T("cat_faq2_q")):
+            st.write(T("cat_faq2_a"))
+        with st.expander(T("cat_faq3_q")):
+            st.write(T("cat_faq3_a"))
+        with st.expander(T("cat_faq4_q")):
+            st.write(T("cat_faq4_a"))
+
+    with c_side:
+        _sidebar_cards(CAT)
 
 # ---------------- Main ----------------
 def main():

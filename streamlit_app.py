@@ -6,8 +6,100 @@ import logging
 st.set_page_config(
     page_title="Zoolotopia Dashboard",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
+
+def _hide_sidebar_on_landing():
+    # CSS is scoped under the .ppw-hide-sidebar class.
+    # JS adds that class on load, then removes it the first time the user clicks the toggle.
+    st.markdown("""
+    <style>
+      .ppw-hide-sidebar [data-testid="stSidebar"]{
+        transform: translateX(-100%) !important; /* slide off-screen */
+        width: 0 !important;
+        min-width: 0 !important;
+        visibility: hidden !important;
+      }
+      .ppw-hide-sidebar [data-testid="stAppViewContainer"] > .main{
+        margin-left: 0 !important;
+      }
+
+      /* Keep Streamlit's toggle visible & clickable (cover multiple versions) */
+      :where(
+        [data-testid="collapsedControl"],
+        [data-testid="stSidebarCollapseButton"],
+        [data-testid="stSidebarNavCollapse"],
+        [aria-label*="Toggle sidebar"],
+        button[title*="sidebar"]
+      ){
+        position: fixed !important;
+        top: 10px !important;
+        left: 10px !important;
+        z-index: 10000 !important;
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+      }
+      :where(
+        [data-testid="collapsedControl"] button,
+        [data-testid="stSidebarCollapseButton"],
+        [data-testid="stSidebarNavCollapse"],
+        [aria-label*="Toggle sidebar"],
+        button[title*="sidebar"]
+      ){
+        background: #ffeada !important;
+        color: #5a3b2e !important;
+        border: 1px solid #c8a18f !important;
+        border-radius: 8px !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,.08) !important;
+      }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Add/remove the class that controls the hide behavior.
+    st.components.v1.html("""
+    <script>
+    (function(){
+      const doc = window.parent?.document || document;
+      const ROOT = doc.documentElement; // <html>
+      const CLASS = "ppw-hide-sidebar";
+
+      // Start hidden on landing:
+      ROOT.classList.add(CLASS);
+
+      // Find any of Streamlit's sidebar toggle buttons
+      function findToggle(){
+        return doc.querySelector(
+          "[data-testid='collapsedControl'] button, \
+           [data-testid='stSidebarCollapseButton'], \
+           [data-testid='stSidebarNavCollapse'], \
+           button[aria-label*='Toggle sidebar'], \
+           button[title*='sidebar']"
+        );
+      }
+
+      function unhide(){
+        ROOT.classList.remove(CLASS);
+      }
+
+      // Attach once to the first available toggle
+      function arm(){
+        const t = findToggle();
+        if (!t) return false;
+        t.addEventListener("click", unhide, { once: true });
+        return true;
+      }
+
+      if (!arm()){
+        // If not ready yet, watch DOM briefly
+        const mo = new MutationObserver(() => { if (arm()) mo.disconnect(); });
+        mo.observe(doc.body, { childList: true, subtree: true });
+        setTimeout(() => mo.disconnect(), 3000);
+      }
+    })();
+    </script>
+    """, height=0)
 
 # --- Env + feature flags (NEW) ---
 ENV = os.getenv("APP_ENV", st.secrets.get("ENV", "prod")).lower()
@@ -201,8 +293,10 @@ def guard_admin_page():
 
 # --- Routes ---
 if page == "landing":
+    _hide_sidebar_on_landing()
     from page_components import Landing_Page
     Landing_Page.main()
+
 
 elif page == "dogtopia":
     from page_components import Dogtopia
