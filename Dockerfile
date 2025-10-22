@@ -18,4 +18,4 @@ EXPOSE 8501
 
 # Command to run the Streamlit app
 # --server.address=0.0.0.0 makes it accessible outside the container
-CMD ["streamlit", "run", "streamlit_app.py", "--server.address=0.0.0.0"]
+CMD ["streamlit", "run", "streamlit_app.py", "--client.showErrorDetails=false", "--server.address=0.0.0.0"]
