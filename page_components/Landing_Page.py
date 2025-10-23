@@ -9,27 +9,19 @@ def main():
 
     profile_url = _safe_join_url(BASE_IMAGE_URL, PROFILE_KEY)
     qr_url = _safe_join_url(BASE_IMAGE_URL, QR_KEY)
-
     st.markdown("""
     <style>
-      .stApp, [data-testid="stAppViewContainer"], 
-      [data-testid="stAppViewContainer"] > .main {{
-        background: #ffeada !important;
-      }}
-      [data-testid="block-container"]{{
-        padding-top: 0 !important;
-        padding-bottom: 0 !important;
-      }}
-      header[data-testid="stHeader"] {{ background: transparent !important; }}
-      /* Remove Streamlit's top padding/margins around the first element */
-      [data-testid="stAppViewContainer"] > .main {{ padding-top: 0 !important; margin-top: 0 !important; }}
-      /* Remove element wrapper gaps that Streamlit inserts */
-      .stElement, .element-container {{ margin-top: 0 !important; padding-top: 0 !important; }}
-      /* Ensure the inner block container has no top/bottom padding */
-      [data-testid="block-container"] {{ padding-top: 0 !important; padding-bottom: 0 !important; }}
+    /* kill the default Streamlit chrome spacing */
+    header[data-testid="stHeader"]{height:0; min-height:0; visibility:hidden;}
+    [data-testid="stToolbar"]{display:none;}
+    #MainMenu, footer {visibility:hidden;}
+    [data-testid="stAppViewContainer"] > .main, 
+    [data-testid="block-container"]{
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    }
     </style>
     """, unsafe_allow_html=True)
-
     components.html(
         f"""
         <style>
@@ -66,8 +58,8 @@ def main():
         .center-wrap {{
           position: relative;
           display: flex;
-          align-items: center;
-          justify-content: center;
+          align-items: top;
+          justify-content: top;
           overflow: hidden;
           min-height: 720px;
           padding-top: 0; 
@@ -149,7 +141,7 @@ def main():
 
         /* Hints */
         .hint {{
-          transform: translateY 5px);
+          transform: translateY 5px;
           font-family: 'American Typewriter', serif;
           text-align: center;
           color: #7a5a4b;
@@ -168,10 +160,16 @@ def main():
         @media (max-width: 720px) {{
           .center-wrap {{ min-height: 680px; }}
           .arc-title   {{ width: min(96vw, 600px); }}
+          body{{ padding-top: max(0px, env(safe-area-inset-top)); }}
+          .page{{ transform: translateY(-60px); }}
+          .card-wrap{{ transform: scale(.68); transform-origin: top center; }}
+          .hint{{ transform: translateY(-280px); }}
+
         }}
         @media (max-width: 480px) {{
           .center-wrap {{ min-height: 640px; }}
           .arc-title   {{ width: 96vw; }}
+          body{{ padding-top: max(0px, env(safe-area-inset-top)); }}
         }}
 
         /* Safety for very short screens */

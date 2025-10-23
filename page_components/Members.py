@@ -176,43 +176,64 @@ def build_members(df: pd.DataFrame):
     return members
 
 # ---------- UI helpers ----------
-def grid_cards(df: pd.DataFrame, cards_per_row=6, img_size=140, label_col="Name", meta_col=None):
+# ---------- UI helpers (responsive grid: 2 per row on phones) ----------
+def grid_cards(df: pd.DataFrame, img_size=140, label_col="Name", meta_col=None):
     if df.empty:
         st.info("No members match your filters yet.")
         return
 
-    st.markdown("""
+    # CSS (no Python {} inside; we just replace the size token)
+    css = """
     <style>
+      .members-grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(8, minmax(0, 1fr));
+      }
+      @media (max-width: 1400px) { .members-grid { grid-template-columns: repeat(6, 1fr); } }
+      @media (max-width: 1100px) { .members-grid { grid-template-columns: repeat(5, 1fr); } }
+      @media (max-width: 900px)  { .members-grid { grid-template-columns: repeat(4, 1fr); } }
+      @media (max-width: 700px)  { .members-grid { grid-template-columns: repeat(4, 1fr); } }
+      @media (max-width: 520px)  { .members-grid { grid-template-columns: repeat(4, 1fr); } } /* phones */
+
       .member-card  { text-align:center; padding:8px 4px; }
-      .member-name  { margin-top:8px; font-weight:700; color:#5a3b2e; line-height:1.2; font-size:15px; }
+      .member-name  { margin-top:8px; font-weight:700; color:#5a3b2e; line-height:1.2; font-size:15px; word-break:break-word; }
       .member-meta  { margin-top:2px; color:#7a7a7a; font-size:12px; line-height:1.2; }
+
+      .member-avatar {
+        width: 100%;
+        max-width: VAR_IMG_SIZEpx;  /* replaced below */
+        aspect-ratio: 1/1;
+        margin: 0 auto;
+        display: block;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #f4cbba;
+        box-shadow: 0 2px 8px rgba(90,59,46,0.15);
+      }
+      
     </style>
-    """, unsafe_allow_html=True)
+    """.replace("VAR_IMG_SIZE", str(int(img_size)))
+    st.markdown(css, unsafe_allow_html=True)
 
-    for i in range(0, len(df), cards_per_row):
-        cols = st.columns(cards_per_row)
-        for j, (_, row) in enumerate(df.iloc[i:i+cards_per_row].iterrows()):
-            with cols[j]:
-                src   = row.get("Avatar", _placeholder_for("Member"))  # already URL or data-URL
-                label = row.get(label_col, row.get("Name", ""))
-                meta  = str(row.get(meta_col, "")) if meta_col else ""
+    # Build flat, no-indent HTML (important: no starting spaces/newlines)
+    cards = []
+    for _, row in df.iterrows():
+        src   = row.get("Avatar", _placeholder_for("Member"))
+        label = row.get(label_col, row.get("Name", ""))
+        meta  = str(row.get(meta_col, "")) if meta_col else ""
+        meta_html = f'<div class="member-meta">{meta}</div>' if meta else ""
+        cards.append(
+            f'<div class="member-card">'
+            f'<img class="member-avatar" src="{src}" alt="{label}"/>'
+            f'<div class="member-name">{label}</div>'
+            f'{meta_html}'
+            f'</div>'
+        )
 
-                html = f"""
-                <div class="member-card">
-                  <img src="{src}" alt="{label}"
-                       style="
-                         width:{img_size}px; height:{img_size}px;
-                         display:block; margin:0 auto;
-                         border-radius:50%;
-                         object-fit:cover;
-                         border:3px solid #f4cbba;
-                         box-shadow:0 2px 8px rgba(90,59,46,0.15);
-                       " />
-                  <div class="member-name">{label}</div>
-                  {f'<div class="member-meta">{meta}</div>' if meta else ''}
-                </div>
-                """
-                st.markdown(html, unsafe_allow_html=True)
+    html = '<div class="members-grid">' + "".join(cards) + '</div>'
+    st.markdown(html, unsafe_allow_html=True)
+
 
 # ---------- page ----------
 def main():
@@ -335,7 +356,7 @@ def main():
     )
 
     st.caption(f"Showing **{len(view)}** members")
-    grid_cards(view, cards_per_row=8, img_size=140, label_col="Name", meta_col="MetricLine")
+    grid_cards(view, img_size=140, label_col="Name", meta_col="MetricLine")
 
 
 if __name__ == "__main__":

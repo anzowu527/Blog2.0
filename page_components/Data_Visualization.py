@@ -466,6 +466,27 @@ def main():
         background-color: #2a1912 !important;
         transform: translateY(0);
     }
+    div[data-testid="stHorizontalBlock"]{
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;          /* never wrap */
+    overflow-x: auto !important;           /* scroll if cramped */
+    gap: 12px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    scrollbar-width: thin;
+    }
+
+    /* Child columns: don't shrink; keep a usable width for the buttons */
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]{
+    flex: 0 0 auto !important;             /* stop responsive stacking */
+    min-width: 140px !important;           /* keeps each button block on one row */
+    }
+
+    /* Make each nav button fill its column nicely */
+    div[data-testid="stHorizontalBlock"] .stButton > button{
+    width: 100% !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -717,11 +738,11 @@ def main():
                     st.altair_chart(current_month_chart, use_container_width=True)
 
 
-            # -------- Controls: Prev / Today / Next (CENTERED & EVENLY SPACED) --------
-            st.markdown("<div style='margin:10px 0;'></div>", unsafe_allow_html=True)
+            # -------- Controls: Prev / Today / Next (LOCKED ON ONE ROW) --------
+            st.markdown("<div id='op-nav-anchor'></div>", unsafe_allow_html=True)
 
-            #        [ left spacer ][ Prev ][ gap ][ Today ][ gap ][ Next ][ right spacer ]
-            left_sp, c_prev, gap1, c_today, gap2, c_next, right_sp = st.columns([2, 1, 0.5, 1, 0.5, 1, 2], gap="large")
+                        # -------- Controls: Prev / Today / Next (NEVER WRAP) --------
+            c_prev, c_today, c_next = st.columns([1, 1, 1], gap="large")
 
             with c_prev:
                 if st.button("← Prev. Day", key="op_prev_day"):
@@ -737,6 +758,7 @@ def main():
                 if st.button("Next Day →", key="op_next_day"):
                     st.session_state.op_date = st.session_state.op_date + timedelta(days=1)
                     st.rerun()
+
 
 
             # -------- Under the graphs: Avatars of pets on op_day --------

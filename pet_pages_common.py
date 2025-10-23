@@ -66,7 +66,18 @@ def render_pet_detail_page(
     """One-liner detail page renderer for Dog/Cat/Shelter detail pages."""
 
     # Title
+    st.markdown("<div style='height:30px;'></div>", unsafe_allow_html=True)
+
     st.title(title_text)
+    # Story
+    st.markdown("---")
+    story = None
+    if story_getter:
+        try:
+            story = story_getter(person_name)
+        except Exception:
+            story = None
+    st.markdown(story or "*This friend's story is still being written. Stay tuned!*")
 
     # Hide sidebar on detail pages
     st.markdown(
@@ -78,7 +89,60 @@ def render_pet_detail_page(
         """,
         unsafe_allow_html=True,
     )
+     # Prev / Back / Next
+    prev_name, next_name, _ = _prev_next_names(bucket, root_prefix, person_name)
 
+    prev_html = (
+        f"<a class='dog-btn' href='javascript:void(0)' onclick=\"goPet('{quote(prev_name)}')\">"
+        f"⬅️ Previous ({prev_name})</a>" if prev_name else ""
+    )
+    back_html = "<a class='dog-btn' href='javascript:void(0)' onclick='backList()'>🏠 Back</a>"
+    next_html = (
+        f"<a class='dog-btn' href='javascript:void(0)' onclick=\"goPet('{quote(next_name)}')\">"
+        f"Next ({next_name}) ➡️</a>" if next_name else ""
+    )
+
+    html(
+        f"""
+        <style>
+        .dog-nav {{ display:flex; gap:12px; align-items:center; justify-content:space-between;
+                    max-width:820px; margin: 8px auto 16px; }}
+        .dog-btn {{ display:inline-block; text-decoration:none; background:#5a3b2e; color:#ffeada;
+                    padding:10px 14px; border-radius:10px; font-weight:700;
+                    box-shadow:0 6px 12px rgba(0,0,0,0.18);
+                    transition: transform .12s ease, filter .2s ease; }}
+        .dog-btn:hover {{ filter:brightness(1.05); transform:translateY(-1px); }}
+        .dog-btn:active {{ transform:translateY(0); }}
+        </style>
+
+        <div class="dog-nav">
+          {prev_html}
+          {back_html}
+          {next_html}
+        </div>
+
+        <script>
+        const TOP = (window.top && window.top.location) ? window.top.location : window.location;
+        const APP_BASE = TOP.origin + TOP.pathname;
+
+        function safeOpen(url) {{
+            try {{ window.open(url, '_blank'); }}
+            catch (e) {{ try {{ TOP.href = url; }} catch (_e) {{ console.error('Navigation blocked:', _e); }} }}
+        }}
+
+        function goPet(name) {{
+            const url = APP_BASE + '?page={page_param}&{page_param}=' + encodeURIComponent(name);
+            safeOpen(url);
+        }}
+
+        function backList() {{
+            const url = APP_BASE + '?page={back_page}';
+            safeOpen(url);
+        }}
+        </script>
+        """,
+        height=90,
+    )
     # Images (S3 → CloudFront URLs)
     images = _random_image_urls(bucket=bucket, person_name=person_name, root_prefix=root_prefix, max_count=max_photos)
     images_json = json.dumps(images)
@@ -100,7 +164,12 @@ def render_pet_detail_page(
 
         const count = Math.max(images.length, 1);
         const step = 360 / count;
-        const radius = Math.min(420, 120 + count * 32);
+        // ↓ NEW: smaller radius on mobile so the ring is tighter
+        const isMobile = window.matchMedia("(max-width: 768px)").matches;
+        const baseRadius = isMobile ? 90 : 120;    // was 120
+        const perImage   = isMobile ? 24 : 32;     // was 32
+        const maxRadius  = isMobile ? 300 : 420;   // was 420
+        const radius     = Math.min(maxRadius, baseRadius + count * perImage);
 
         images.forEach((img, i) => {{
             const span = document.createElement("span");
@@ -163,6 +232,8 @@ def render_pet_detail_page(
         }});
 
         rotateCarousel();
+
+
         </script>
 
         <style>
@@ -172,13 +243,13 @@ def render_pet_detail_page(
             align-items: center;
             touch-action: pan-y;
             height: 80vh;
-            max-height: 820px;
+            max-height: 620px;
             width: 100%;
             padding: 0;
-            margin: 0 auto 8px auto;
             background: transparent;
             box-sizing: border-box;
             position: relative;
+            margin: 0 auto 0 auto;
         }}
 
         .scope {{
@@ -187,7 +258,6 @@ def render_pet_detail_page(
             transform-style: preserve-3d;
             position: relative;
             transition: transform 0.08s ease;
-            transform: translateY(100px);
         }}
 
         .scope span {{
@@ -212,75 +282,29 @@ def render_pet_detail_page(
         }}
 
         @media (max-width: 768px) {{
-            .gallery-container {{ height: 56vh; }}
-            .scope {{ width: min(200px, 76vw); height: min(280px, 40vh); }}
+        /* shorter overall frame */
+        .gallery-container {{
+            height: 55vh;        /* was 56vh */
         }}
+
+        /* narrower & shorter stage; a little less vertical offset */
+        .scope {{
+            width:  min(170px, 66vw);   /* was min(200px, 76vw) */
+            height: min(220px, 38vh);   /* was min(280px, 40vh) */
+
+        }}
+
+        /* slimmer borders/shadows so small images feel lighter */
+        .scope span img {{
+            border: 3px solid #c18c5d;  /* was 5px */
+            border-radius: 12px;        /* was 14px */
+            box-shadow: 0 8px 16px rgba(0,0,0,0.16); /* was 0 12px 24px 0.18 */
+        }}
+        }}
+        
+        
         </style>
         """,
         height=680,
     )
 
-    # Story
-    st.markdown("---")
-    story = None
-    if story_getter:
-        try:
-            story = story_getter(person_name)
-        except Exception:
-            story = None
-    st.markdown(story or "*This friend's story is still being written. Stay tuned!*")
-
-    # Prev / Back / Next
-    prev_name, next_name, _ = _prev_next_names(bucket, root_prefix, person_name)
-
-    prev_html = (
-        f"<a class='dog-btn' href='javascript:void(0)' onclick=\"goPet('{quote(prev_name)}')\">"
-        f"⬅️ Previous ({prev_name})</a>" if prev_name else ""
-    )
-    back_html = "<a class='dog-btn' href='javascript:void(0)' onclick='backList()'>🏠 Back</a>"
-    next_html = (
-        f"<a class='dog-btn' href='javascript:void(0)' onclick=\"goPet('{quote(next_name)}')\">"
-        f"Next ({next_name}) ➡️</a>" if next_name else ""
-    )
-
-    html(
-        f"""
-        <style>
-        .dog-nav {{ display:flex; gap:12px; align-items:center; justify-content:space-between;
-                    max-width:820px; margin: 8px auto 16px; }}
-        .dog-btn {{ display:inline-block; text-decoration:none; background:#5a3b2e; color:#ffeada;
-                    padding:10px 14px; border-radius:10px; font-weight:700;
-                    box-shadow:0 6px 12px rgba(0,0,0,0.18);
-                    transition: transform .12s ease, filter .2s ease; }}
-        .dog-btn:hover {{ filter:brightness(1.05); transform:translateY(-1px); }}
-        .dog-btn:active {{ transform:translateY(0); }}
-        </style>
-
-        <div class="dog-nav">
-          {prev_html}
-          {back_html}
-          {next_html}
-        </div>
-
-        <script>
-        const TOP = (window.top && window.top.location) ? window.top.location : window.location;
-        const APP_BASE = TOP.origin + TOP.pathname;
-
-        function safeOpen(url) {{
-            try {{ window.open(url, '_blank'); }}
-            catch (e) {{ try {{ TOP.href = url; }} catch (_e) {{ console.error('Navigation blocked:', _e); }} }}
-        }}
-
-        function goPet(name) {{
-            const url = APP_BASE + '?page={page_param}&{page_param}=' + encodeURIComponent(name);
-            safeOpen(url);
-        }}
-
-        function backList() {{
-            const url = APP_BASE + '?page={back_page}';
-            safeOpen(url);
-        }}
-        </script>
-        """,
-        height=96,
-    )

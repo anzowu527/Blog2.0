@@ -4,6 +4,7 @@ from topia_common import render_topia_page
 DATA_PATH = "data/combined.csv"
 
 def main():
+
     render_topia_page(
         data_path=DATA_PATH,
         bucket="annablog",

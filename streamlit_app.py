@@ -117,12 +117,16 @@ html, body, .stApp,
 [data-testid="stAppViewContainer"] > .main,
 .main, .block-container {
   background: #ffeada !important;
+  padding-top: 0 !important;     /* 🔑 removes Streamlit’s top padding */
+  margin-top: 0 !important;
 }
 .main .block-container, [data-testid="block-container"] {
   max-width: 100% !important;
   width: 100% !important;
   padding-left: 12px !important;
   padding-right: 12px !important;
+  padding-top: 0 !important;     /* you already set L/R; add this */
+  margin-top: 0 !important;
 }
 header[data-testid="stHeader"] {
   background-color: #ffeada !important;

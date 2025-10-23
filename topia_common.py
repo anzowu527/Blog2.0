@@ -93,7 +93,7 @@ def render_topia_title(css_class: str, title_text: str):
         .{css_class}{{ font-size:30px !important; }}
       }}
       @media (max-width: 640px) {{
-        .{css_class}{{ font-size:24px !important; }}
+        .{css_class}{{ font-size:30px !important; }}
       }}
     </style>
     """, unsafe_allow_html=True)
@@ -209,6 +209,8 @@ def render_topia_page(
     title_css_class: str, # "catopia-title"
     platforms: Tuple[str, ...] = ("xhs", "rover","shelter"),
 ):
+    st.markdown("<div style='height:60px;'></div>", unsafe_allow_html=True)
+
     render_topia_title(title_css_class, title_text)
 
     # Data

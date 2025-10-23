@@ -5,6 +5,7 @@ import numpy as np
 import streamlit as st
 from streamlit_echarts import st_echarts
 from streamlit_echarts import st_echarts, JsCode
+from topia_common import render_topia_title
 
 DATA_PATH = "data/combined.csv"
 
@@ -207,80 +208,6 @@ def build_top_breeds_and_matched_avatars(
 
         avatars_by_breed[breed] = items
     return breed_names, breed_counts, avatars_by_breed
-
-
-# ---------- Chart: horizontal bars with inline avatars (image://) ----------
-def ec_bar_horizontal_with_inline_avatars_fullwidth(
-    names, values, avatars_by_breed, title_text="",
-    dot_size=28,           # ↓ smaller (was 48/56)
-    x_pad=2.0,             # a little extra room on the right
-    x_step=1.0,            # spacing between dots along the x (value) axis
-    x_offset=0.6           # where the first dot sits on the x axis
-):
-    import numpy as np
-
-    order = np.argsort(values)[::-1]
-    names_ord  = [names[i] for i in order]
-    values_ord = [int(values[i]) for i in order]
-
-    y_labels = names_ord[::-1]
-    bar_vals = values_ord[::-1]
-
-    mp_data_img = []
-    max_needed_x = 0
-    for breed, count in zip(y_labels, bar_vals):
-        items = avatars_by_breed.get(breed, [])
-        n = len(items)
-        max_needed_x = max(max_needed_x, int((n - 1) * x_step + x_offset + 0.5))
-        for i in range(n):
-            x_pos = i * x_step + x_offset
-            mp_data_img.append({
-                "name": items[i].get("label", ""),
-                "coord": [x_pos, breed],
-                "symbol": f"image://{items[i]['img']}",
-                "symbolSize": dot_size,           # ← smaller circles
-                "symbolKeepAspect": True,
-                "label": {"show": False},
-                "z": 3,
-            })
-
-    x_max = max(max(bar_vals) if bar_vals else 0, max_needed_x) + x_pad
-
-    return {
-        "title": {"text": title_text, "left": "center", "top": 2,
-                  "textStyle": {"fontSize": 16, "color": "#5a3b2e", "fontWeight": "600"}},
-        "tooltip": {"trigger": "axis", "axisPointer": {"type": "shadow"}},
-        "grid": {"left": 130, "right": 30, "top": 46, "bottom": 24, "containLabel": True},
-        "xAxis": {"type": "value", "min": 0, "max": x_max, "axisLabel": {"margin": 6}},
-        "yAxis": {"type": "category", "data": y_labels, "axisLabel": {"interval": 0}},
-        "series": [{
-            "type": "bar",
-            "data": bar_vals,
-            "barWidth": 38,    # a bit slimmer so dots feel lighter
-            "label": {"show": True, "position": "right", "formatter": "{c}"},
-            "itemStyle": {
-                "borderRadius": [20, 20, 20, 20],
-                "shadowBlur": 10,
-                "shadowColor": "rgba(90,59,46,0.18)",
-                "color": {
-                    "type": "linear", "x": 0, "y": 0, "x2": 1, "y2": 0,
-                    "colorStops": [
-                        {"offset": 0, "color": "#f4cbba"},
-                        {"offset": 1, "color": "#8b5e3c"},
-                    ],
-                },
-            },
-            "markPoint": {
-                "symbol": "circle",
-                "symbolSize": dot_size,
-                "data": mp_data_img,
-                "animation": True,
-                "tooltip": {"show": True, "formatter": "{b}"},
-            },
-            "animationDuration": 900,
-            "animationEasing": "cubicOut",
-        }]
-    }
 
 
 def normalize_platform(val: str) -> str:
@@ -505,7 +432,7 @@ def ec_bar_vertical(names, values, series_name="Count"):
         "xAxis": {
             "type": "category",
             "data": names,
-            "axisLabel": {"interval": 0, "rotate": 30},
+            "axisLabel": {"interval": 0, "rotate": 0},
         },
         "yAxis": {"type": "value"},
         "series": [{
@@ -703,46 +630,44 @@ def render_summary_table_2cats(dog_stats, cat_stats,
     .ks-mini2 td.stat {{ font-weight: 600; opacity:.85; }}
     .ks-mini2 tr:nth-child(odd):not(.median) td {{ background: rgba(0,0,0,0.025); border-radius: 6px; }}
     .ks-mini2 tr.median td {{ font-weight: 700; }}
+
+    /* phone: pull wrapper to the left, reduce font a bit, left-align labels */
+    @media (max-width: 720px){{
+      .ks-wrap {{ padding-left: 8px !important; padding-right: 8px !important; }}
+      .ks-mini2 td.stat {{ text-align: left; padding-left: 2px; }}
+      .ks-mini2 th, .ks-mini2 td {{ font-size: 12px; }}
+      .ks-mini2 table {{ margin-left: 0 !important; width: 100% !important; table-layout: fixed; }}
+    }}
     </style>
-    <div style="padding-left:{pad_left}px;padding-right:{pad_right}px;">
-    <div class="ks-mini2">
-    <table style="width:100%; border-collapse:separate; border-spacing:0 4px;">
-    <colgroup>
-    <col style="width:100px" />
-    <col /><col />
-    </colgroup>
-    <thead>
-    <tr>
-    <th></th>
-    <th>{dog_label}</th>
-    <th>{cat_label}</th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr><td class="stat">n</td>
-    <td>{get_n(dog_stats)}</td>
-    <td>{get_n(cat_stats)}</td></tr>
-    <tr><td class="stat">min</td>
-    <td>{get(dog_stats,"min")}</td>
-    <td>{get(cat_stats,"min")}</td></tr>
-    <tr><td class="stat">Q1</td>
-    <td>{get(dog_stats,"q1")}</td>
-    <td>{get(cat_stats,"q1")}</td></tr>
-    <tr class="median"><td class="stat">median</td>
-    <td>{get(dog_stats,"med")}</td>
-    <td>{get(cat_stats,"med")}</td></tr>
-    <tr><td class="stat">Q3</td>
-    <td>{get(dog_stats,"q3")}</td>
-    <td>{get(cat_stats,"q3")}</td></tr>
-    <tr><td class="stat">max</td>
-    <td>{get(dog_stats,"max")}</td>
-    <td>{get(cat_stats,"max")}</td></tr>
-    </tbody>
-    </table>
-    </div>
+
+    <div class="ks-wrap" style="padding-left:{pad_left}px;padding-right:{pad_right}px;">
+      <div class="ks-mini2">
+        <table style="width:100%; border-collapse:separate; border-spacing:0 4px;">
+          <colgroup>
+            <col style="width:100px" />
+            <col /><col />
+          </colgroup>
+          <thead>
+            <tr>
+              <th></th>
+              <th>{dog_label}</th>
+              <th>{cat_label}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="stat">n</td><td>{get_n(dog_stats)}</td><td>{get_n(cat_stats)}</td></tr>
+            <tr><td class="stat">min</td><td>{get(dog_stats,"min")}</td><td>{get(cat_stats,"min")}</td></tr>
+            <tr><td class="stat">Q1</td><td>{get(dog_stats,"q1")}</td><td>{get(cat_stats,"q1")}</td></tr>
+            <tr class="median"><td class="stat">median</td><td>{get(dog_stats,"med")}</td><td>{get(cat_stats,"med")}</td></tr>
+            <tr><td class="stat">Q3</td><td>{get(dog_stats,"q3")}</td><td>{get(cat_stats,"q3")}</td></tr>
+            <tr><td class="stat">max</td><td>{get(dog_stats,"max")}</td><td>{get(cat_stats,"max")}</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
     """
     st.markdown(html, unsafe_allow_html=True)
+
 
 def ec_box_species_platform_4cats(
     title_text: str,
@@ -800,30 +725,24 @@ def ec_box_species_platform_4cats(
     elif y_label:
         y_axis["axisLabel"]["formatter"] = "{value} " + y_label
 
-    # Platform color mapping
-    def color_for_cat(idx):
-        return "#8b5e3c" if idx in (0, 2) else "#f4cbba"  # Rover for 0,2 ; XHS for 1,3
-
-    # Per-item colors
-    item_styles = [{"itemStyle": {"color": color_for_cat(i), "borderColor": "#5a3b2e", "borderWidth": 1.2}}
+    # Only set border color (dark brown). Keep fill default.
+    BROWN = "#5a3b2e"
+    item_styles = [{"itemStyle": {"borderColor": BROWN, "borderWidth": 1.8}}
                    if boxes[i] else {}
                    for i in range(4)]
 
     option = {
         "title": {
-            "text": (
-                f"{title_text}  "
-
-            ),
+            "text": f"{title_text}",
             "left": "center", "top": 8,
-            "textStyle": {"fontSize": 12, "color": "#5a3b2e"}
+            "textStyle": {"fontSize": 12, "color": BROWN}
         },
         "tooltip": {"show": False},
         "legend": {
             "show": True,
             "bottom": 0,
             "data": ["Rover", "XHS"],
-            "textStyle": {"color": "#5a3b2e"}
+            "textStyle": {"color": BROWN}
         },
         "grid": {"left": 56, "right": 16, "top": 36, "bottom": 40, "containLabel": True},
         "xAxis": {
@@ -842,32 +761,35 @@ def ec_box_species_platform_4cats(
                     for i in range(4)
                 ],
                 "boxWidth": [16, 44],
+                "itemStyle": {"borderColor": BROWN, "borderWidth": 1.8},
+                "emphasis": {"itemStyle": {"borderColor": BROWN, "borderWidth": 2.2}},
                 "z": 2,
             },
-            # Dummy legend markers (no data) so legend shows platform colors
+            # Keep your legend color chips (no data)
             {"name": "Rover", "type": "scatter", "data": [], "itemStyle": {"color": "#8b5e3c"}},
             {"name": "XHS",   "type": "scatter", "data": [], "itemStyle": {"color": "#f4cbba"}},
         ],
         "animationDuration": 900, "animationEasing": "cubicOut",
     }
 
+    # Keep outliers (unchanged)
     if outs:
-        # Outliers align perfectly because their x matches the exact category index
         option["series"].append({
             "name": "Outliers",
             "type": "scatter",
             "data": outs,
             "symbolSize": 7,
-            "itemStyle": {"color": "#5a3b2e"},
+            "itemStyle": {"color": BROWN},
             "z": 3,
         })
 
     if not any(boxes):
         option["graphic"] = [{
             "type": "text", "left": "center", "top": "middle",
-            "style": {"text": "No data", "fontSize": 12, "fill": "#8b5e3c"}
+            "style": {"text": "No data", "fontSize": 12, "fill": BROWN}
         }]
     return option
+
 
 def render_summary_table_4cats(dr_stats, dx_stats, cr_stats, cx_stats,
                                *, is_currency=False, unit="",
@@ -875,7 +797,6 @@ def render_summary_table_4cats(dr_stats, dx_stats, cr_stats, cx_stats,
     def fmt(v):
         if v is None: return "—"
         return f"${v:,.0f}" if is_currency else f"{v:,.0f}{(' ' + unit) if unit else ''}"
-
     def get(s, key):   return fmt(s.get(key)) if s else "—"
     def get_n(s):      return (s or {}).get("n", 0)
 
@@ -889,60 +810,69 @@ def render_summary_table_4cats(dr_stats, dx_stats, cr_stats, cx_stats,
     .ks-mini td.val  {{ text-align: center; padding: 3px 8px; }}
     .ks-mini tr:nth-child(odd):not(.median) td.val {{ background: rgba(0,0,0,0.025); border-radius: 6px; }}
     .ks-mini tr.median td.val {{ font-weight: 700; }}
+
+    @media (max-width: 720px){{
+      .ks-wrap {{ padding-left: 8px !important; padding-right: 8px !important; }}
+      .ks-mini th, .ks-mini td {{ font-size: 12px; }}
+      .ks-mini table {{ margin-left: 0 !important; width: 100% !important; table-layout: fixed; }}
+      .ks-mini td.stat {{ padding-left: 2px; }}
+    }}
     </style>
-    <div style="padding-left:{pad_left}px;padding-right:{pad_right}px;">
-    <div class="ks-mini">
-    <table style="width:100%; border-collapse:separate; border-spacing:0 4px;">
-    <colgroup>
-    <col style="width:100px" />
-    <col /><col /><col /><col />
-    </colgroup>
-    <thead>
-    <tr>
-    <th></th>
-    <th>{headers[0]}</th>
-    <th>{headers[1]}</th>
-    <th>{headers[2]}</th>
-    <th>{headers[3]}</th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr><td class="stat">n</td>
-    <td class="val">{get_n(dr_stats)}</td>
-    <td class="val">{get_n(dx_stats)}</td>
-    <td class="val">{get_n(cr_stats)}</td>
-    <td class="val">{get_n(cx_stats)}</td></tr>
-    <tr><td class="stat">min</td>
-    <td class="val">{get(dr_stats,"min")}</td>
-    <td class="val">{get(dx_stats,"min")}</td>
-    <td class="val">{get(cr_stats,"min")}</td>
-    <td class="val">{get(cx_stats,"min")}</td></tr>
-    <tr><td class="stat">Q1</td>
-    <td class="val">{get(dr_stats,"q1")}</td>
-    <td class="val">{get(dx_stats,"q1")}</td>
-    <td class="val">{get(cr_stats,"q1")}</td>
-    <td class="val">{get(cx_stats,"q1")}</td></tr>
-    <tr class="median"><td class="stat">median</td>
-    <td class="val">{get(dr_stats,"med")}</td>
-    <td class="val">{get(dx_stats,"med")}</td>
-    <td class="val">{get(cr_stats,"med")}</td>
-    <td class="val">{get(cx_stats,"med")}</td></tr>
-    <tr><td class="stat">Q3</td>
-    <td class="val">{get(dr_stats,"q3")}</td>
-    <td class="val">{get(dx_stats,"q3")}</td>
-    <td class="val">{get(cr_stats,"q3")}</td>
-    <td class="val">{get(cx_stats,"q3")}</td></tr>
-    <tr><td class="stat">max</td>
-    <td class="val">{get(dr_stats,"max")}</td>
-    <td class="val">{get(dx_stats,"max")}</td>
-    <td class="val">{get(cr_stats,"max")}</td>
-    <td class="val">{get(cx_stats,"max")}</td></tr>
-    </tbody>
-    </table>
-    </div>
+
+    <div class="ks-wrap" style="padding-left:{pad_left}px;padding-right:{pad_right}px;">
+      <div class="ks-mini">
+        <table style="width:100%; border-collapse:separate; border-spacing:0 4px;">
+          <colgroup>
+            <col style="width:100px" />
+            <col /><col /><col /><col />
+          </colgroup>
+          <thead>
+            <tr>
+              <th></th>
+              <th>{headers[0]}</th>
+              <th>{headers[1]}</th>
+              <th>{headers[2]}</th>
+              <th>{headers[3]}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="stat">n</td>
+              <td class="val">{get_n(dr_stats)}</td>
+              <td class="val">{get_n(dx_stats)}</td>
+              <td class="val">{get_n(cr_stats)}</td>
+              <td class="val">{get_n(cx_stats)}</td></tr>
+            <tr><td class="stat">min</td>
+              <td class="val">{get(dr_stats,"min")}</td>
+              <td class="val">{get(dx_stats,"min")}</td>
+              <td class="val">{get(cr_stats,"min")}</td>
+              <td class="val">{get(cx_stats,"min")}</td></tr>
+            <tr><td class="stat">Q1</td>
+              <td class="val">{get(dr_stats,"q1")}</td>
+              <td class="val">{get(dx_stats,"q1")}</td>
+              <td class="val">{get(cr_stats,"q1")}</td>
+              <td class="val">{get(cx_stats,"q1")}</td></tr>
+            <tr class="median"><td class="stat">median</td>
+              <td class="val">{get(dr_stats,"med")}</td>
+              <td class="val">{get(dx_stats,"med")}</td>
+              <td class="val">{get(cr_stats,"med")}</td>
+              <td class="val">{get(cx_stats,"med")}</td></tr>
+            <tr><td class="stat">Q3</td>
+              <td class="val">{get(dr_stats,"q3")}</td>
+              <td class="val">{get(dx_stats,"q3")}</td>
+              <td class="val">{get(cr_stats,"q3")}</td>
+              <td class="val">{get(cx_stats,"q3")}</td></tr>
+            <tr><td class="stat">max</td>
+              <td class="val">{get(dr_stats,"max")}</td>
+              <td class="val">{get(dx_stats,"max")}</td>
+              <td class="val">{get(cr_stats,"max")}</td>
+              <td class="val">{get(cx_stats,"max")}</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
     """
     st.markdown(html, unsafe_allow_html=True)
+
 # ---------- Revisit / Loyalty Helpers ----------
 def _arrival_col(df: pd.DataFrame):
     return get_first_existing(df, ["Arrival Date", "Arrival", "Check-in", "Check In", "Start Date"])
@@ -1112,10 +1042,244 @@ def ec_hist_time_to_return(labels, counts, title="Days to 2nd Visit"):
                    "label":{"show":True,"position":"top","formatter":"{c}"}}]
     }
 
+def make_responsive(option: dict, mobile_option: dict, max_width: int = 720) -> dict:
+    """
+    Wrap a normal ECharts option so that when the chart container width is <= max_width,
+    ECharts applies `mobile_option` overrides automatically.
+    """
+    return {
+        "baseOption": option,
+        "media": [
+            {
+                "query": {"maxWidth": max_width},
+                "option": mobile_option
+            }
+        ]
+    }
+
+
+st.markdown("""
+<style>
+@media (max-width: 720px){
+  /* kill page/container padding */
+  .block-container { padding-left: 1 !important; padding-right: 1 !important; }
+  /* kill column inner padding */
+  [data-testid="column"] > div:first-child { padding-left: 0 !important; padding-right: 0 !important; }
+  /* optional: reduce caption & subheader side spacing */
+  [data-testid="stMarkdown"] { padding-left: 8px; padding-right: 8px; }
+}
+</style>
+""", unsafe_allow_html=True)
+
+def echarts_scroll_container_start(min_width_px: int = 1100):
+    # Horizontal scroll container with a wide inner div
+    st.markdown(
+        f"""
+        <div style="overflow-x:auto; -webkit-overflow-scrolling:touch;">
+          <div style="min-width:{min_width_px}px;">
+        """,
+        unsafe_allow_html=True
+    )
+
+def echarts_scroll_container_end():
+    st.markdown("</div></div>", unsafe_allow_html=True)
+
+def ec_bar_vertical_with_inline_avatars_fullheight(
+    names, values, avatars_by_breed, title_text="",
+    dot_size=32, y_pad=1.2, y_step=1.0, y_offset=0.4
+):
+    """
+    Vertical version of the avatar chart — each breed as a vertical bar
+    with avatars stacked upwards.
+    """
+    import numpy as np
+
+    order = np.argsort(values)[::-1]
+    names_ord  = [names[i] for i in order]
+    values_ord = [int(values[i]) for i in order]
+
+    x_labels = names_ord
+    bar_vals = values_ord
+
+    # Prepare scatter image points (avatars)
+    mp_data_img = []
+    max_needed_y = 0
+    for breed, count in zip(x_labels, bar_vals):
+        items = avatars_by_breed.get(breed, [])
+        n = len(items)
+        max_needed_y = max(max_needed_y, int((n - 1) * y_step + y_offset + 0.5))
+        for i in range(n):
+            y_pos = i * y_step + y_offset
+            mp_data_img.append({
+                "name": items[i].get("label", ""),
+                "coord": [breed, y_pos],
+                "symbol": f"image://{items[i]['img']}",
+                "symbolKeepAspect": True,
+                "label": {"show": False},
+                "z": 3,
+            })
+
+    y_max = max(max(bar_vals) if bar_vals else 0, max_needed_y) + y_pad * 1.2 
+
+    return {
+        "title": {"text": title_text, "left": "center", "top": 2,
+                  "textStyle": {"fontSize": 16, "color": "#5a3b2e", "fontWeight": "600"}},
+        "tooltip": {"trigger": "axis", "axisPointer": {"type": "shadow"}},
+        "grid": {"left": 40, "right": 24, "top": 46, "bottom": 60, "containLabel": True},
+        "xAxis": {"type": "category", "data": x_labels, "axisLabel": {"rotate": 30, "margin": 8}},
+        "yAxis": {"type": "value", "min": 0, "max": y_max, "axisLabel": {"margin": 4}},
+        "series": [{
+            "type": "bar",
+            "data": bar_vals,
+            "barWidth": 44,
+            "label": {"show": True, "position": "top", "formatter": "{c}"},
+            "itemStyle": {
+                "borderRadius": [10, 10, 0, 0],
+                "shadowBlur": 10,
+                "shadowColor": "rgba(90,59,46,0.18)",
+                "color": {
+                    "type": "linear", "x": 0, "y": 0, "x2": 0, "y2": 1,
+                    "colorStops": [
+                        {"offset": 0, "color": "#8b5e3c"},
+                        {"offset": 1, "color": "#f4cbba"},
+                    ],
+                },
+            },
+            "markPoint": {
+                "symbol": "circle",
+                "symbolSize": dot_size,
+                "data": mp_data_img,
+                "animation": True,
+                "tooltip": {"show": True, "formatter": "{b}"},
+            },
+            "animationDuration": 900,
+            "animationEasing": "cubicOut",
+        }]
+    }
 
 # ---------------- Main ----------------
 def main():
-    st.title("📈 Kingdom Statistics")
+    # --- responsive helpers (local to main for easy paste) ---
+    def make_responsive(option: dict, mobile_option: dict, max_width: int = 720) -> dict:
+        """Merge mobile overrides when chart container width <= max_width."""
+        return {
+            "baseOption": option,
+            "media": [{"query": {"maxWidth": max_width}, "option": mobile_option}],
+        }
+
+    MOBILE_DONUT = {
+        "title": {
+            "top": "42%",
+            "textStyle": {"fontSize": 20},
+            "subtextStyle": {"fontSize": 12},
+        },
+        "series": [{
+            "radius": ["38%", "72%"],
+            "center": ["50%", "48%"],
+            "label": {"fontSize": 10}
+        }],
+        # keep small global padding
+        "grid": {"top": 8, "right": 8, "bottom": 12, "left": 8}
+    }
+
+    MOBILE_CARTESIAN = {
+        "title": {"top": 0, "textStyle": {"fontSize": 12}},
+        "grid": {"left": 8, "right": 8, "top": 24, "bottom": 24, "containLabel": True},
+        "xAxis": {"axisLabel": {"fontSize": 10, "rotate": 0, "margin": 4}},  # ← no rotate
+        "yAxis": {"axisLabel": {"fontSize": 10, "margin": 4}},
+        # NOTE: no "series" override here → preserves your original boxplot colors/borders/widths
+    }
+
+    MOBILE_BAR = {
+        "title": {"textStyle": {"fontSize": 12}},
+        "grid": {"left": 8, "right": 8, "top": 24, "bottom": 24, "containLabel": True},
+        "xAxis": {"axisLabel": {"fontSize": 10, "rotate": 0, "margin": 4}},  # ← no rotate
+        "yAxis": {"axisLabel": {"fontSize": 10, "margin": 4}},
+        "series": [{"barWidth": 40, "label": {"fontSize": 10}}],  # safe tweak, no color change
+    }
+    # NEW — mobile override tailored for the vertical avatar bar
+    def MOBILE_AVATAR_VERT():
+        return {
+            "title": {"textStyle": {"fontSize": 12}},
+            # extra bottom room so long labels don’t clip; still compact overall
+            "grid": {"left": 8, "right": 8, "top": 24, "bottom": 88, "containLabel": True},
+            "xAxis": {
+                # show ALL labels; keep them readable; allow multi-line wraps if needed
+                "axisLabel": {
+                    "fontSize": 10, "rotate": 90, "interval": 0, "margin": 6,
+                    "width": 90, "overflow": "break"  # wrap to 2–3 lines when necessary
+                }
+            },
+            "yAxis": {
+                "axisLabel": {"fontSize": 12, "margin": 6},
+                "min": 0,
+                "max": "dataMax",           # <- scale just to the tallest bar
+                "boundaryGap": [0, 0.15],   # <- 15% headroom above bars
+            },
+            # make bars skinnier + smaller avatar dots + smaller value labels
+            "series": [{
+                "barWidth": 25,
+                "label": {"fontSize": 10},
+                "markPoint": {"symbolSize": 23},
+                "itemStyle": {
+                    "borderRadius": [20, 20, 0, 0],   # ← round top-left/top-right corners
+                    "shadowBlur": 10,
+                    "shadowColor": "rgba(90,59,46,0.18)",
+                },
+            }],
+            # enable touch scroll/zoom on the x-axis (swipe left/right on mobile)
+            "dataZoom": [{"type": "inside", "xAxisIndex": [0]}],
+        }
+    
+    # NEW — laptop override for the vertical avatar bar (>= 1024px)
+    def LAPTOP_AVATAR_VERT():
+        return {
+            "title": {"textStyle": {"fontSize": 14}},
+            "grid": {"left": 40, "right": 24, "top": 46, "bottom": 70, "containLabel": True},
+            "xAxis": {
+                
+                "axisLabel": {
+                    "fontSize": 12, "rotate": 0, "interval": 0, "margin": 10,
+                    "width": 110, "overflow": "truncate"
+                }
+            },
+            "yAxis": {
+                "axisLabel": {"fontSize": 12, "margin": 6},
+                "min": 0,
+                "max": "dataMax",           # <- scale just to the tallest bar
+                "boundaryGap": [0, 0.15],   # <- 15% headroom above bars
+            },
+            "series": [{
+                # keep bars comfortable on laptop, slightly thicker than mobile
+                "barWidth": 40,
+                "label": {"fontSize": 12},
+                # BIGGER AVATARS on laptop:
+                "markPoint": {"symbolSize": 33},   # ← bump this to taste (e.g., 44)
+                "itemStyle": {
+                    "borderRadius": [20, 20, 0, 0],   # ← round top-left/top-right corners
+                    "shadowBlur": 10,
+                    "shadowColor": "rgba(90,59,46,0.18)",
+                },
+            }]
+        }
+    # NEW — responsive wrapper: apply mobile (<=720px) and laptop (>=1024px) overrides
+    def make_responsive_avatar(option: dict) -> dict:
+        return {
+            "baseOption": option,
+            "media": [
+                {"query": {"maxWidth": 720},  "option": MOBILE_AVATAR_VERT()},
+                {"query": {"minWidth": 1024}, "option": LAPTOP_AVATAR_VERT()},
+            ]
+        }
+
+    # chart height presets (feel free to tweak)
+    H_DONUT = "320px"
+    H_BOX   = "300px"
+    H_BAR   = "300px"
+
+    # --- top spacing / title ---
+    st.markdown("<div style='height:60px;'></div>", unsafe_allow_html=True)
+    render_topia_title("svc-title", "📈 Kingdom Statistics")
     st.caption("Excludes shelter dogs.")
 
     df = read_df_safe(DATA_PATH)
@@ -1140,29 +1304,27 @@ def main():
     df = coerce_dates(df)
     df["__SpeciesNorm__"] = df[species_col].apply(normalize_species)
 
-    # ---- Global filter: exclude shelter dogs everywhere ----
+    # Global filter: exclude shelter dogs
     df = exclude_shelter_dogs(df, "__SpeciesNorm__")
 
-    # For donut unique counts, dedupe by name within species
+    # Unique counts by species (dedupe by name)
     names_series = safe_name_series(df[name_col])
     dog_names = names_series[df["__SpeciesNorm__"] == "Dog"].unique()
     cat_names = names_series[df["__SpeciesNorm__"] == "Cat"].unique()
-    dogs = len(dog_names)
-    cats = len(cat_names)
-    total = dogs + cats
-
+    dogs = len(dog_names); cats = len(cat_names); total = dogs + cats
 
     # ---- Unique Pets + Total Visits donuts ----
     st.subheader("Unique Pets & Total Visits")
-
     left, right = st.columns(2)
 
-    # Unique pets (already deduped by name within species)
     with left:
         st.markdown("**Unique Pets**")
-        st_echarts(ec_donut(total, dogs, cats, subtitle="Unique"), height="380px")
+        st_echarts(
+            make_responsive(ec_donut(total, dogs, cats, subtitle="Unique"), MOBILE_DONUT),
+            height=H_DONUT,
+            renderer="svg",
+        )
 
-    # Total visits (split by Boarding vs Drop-In, still colored by species)
     with right:
         st.markdown("**Total Visits**")
         svc_col = get_service_col(df)
@@ -1170,7 +1332,6 @@ def main():
             svc = df[svc_col].astype(str).str.lower()
             is_drop = svc.apply(is_dropin_service)
         else:
-            # If no service column, treat all as Boarding/Other
             is_drop = pd.Series(False, index=df.index)
 
         is_dog = (df["__SpeciesNorm__"] == "Dog")
@@ -1180,41 +1341,36 @@ def main():
         dog_drop  = int((is_dog &  is_drop).sum())
         cat_board = int((is_cat & ~is_drop).sum())
         cat_drop  = int((is_cat &  is_drop).sum())
-
         visits_total = dog_board + dog_drop + cat_board + cat_drop
 
         st_echarts(
-            ec_donut_visits_split(
-                visits_total,
-                dog_board, dog_drop,
-                cat_board, cat_drop,
-                subtitle="Visits"
+            make_responsive(
+                ec_donut_visits_split(
+                    visits_total, dog_board, dog_drop, cat_board, cat_drop, subtitle="Visits"
+                ),
+                MOBILE_DONUT,
             ),
-            height="380px"
+            height=H_DONUT,
+            renderer="svg",
         )
 
     st.markdown("---")
 
-    # ---------- Boarding Price & Duration Distributions (log scale, shared axes) ----------
+    # ---------- Boarding Price & Duration Distributions ----------
     st.subheader("Boarding Price & Duration Distributions (log scale)")
     df = exclude_dropins(df)
 
-    # one row, three even charts
-    c1, gap, c3 = st.columns([1,0.1, 1]) 
+    c1, _, c3 = st.columns([1, 0.1, 1])
 
-    # --- Duration (days) ---
-    # discover columns once up here (reuse your earlier logic if you prefer)
     dur_col   = get_first_existing(df, ["Duration", "Nights", "Days"])
     rate_col  = get_first_existing(df, ["daily price", "DailyPrice", "Rate", "Price/Day", "Price Per Day"])
     plat_col  = get_channel_col(df)
 
-    # --- Duration (days) split by Platform ---
+    # Duration (days) split by Platform
     with c1:
         if dur_col and plat_col:
             x = df[[dur_col, plat_col, "__SpeciesNorm__"]].copy()
-            # ⬇️ exclude Drop-In
             x = exclude_dropins(x)
-
             x[dur_col] = pd.to_numeric(x[dur_col], errors="coerce")
             x = x[np.isfinite(x[dur_col]) & (x[dur_col] > 0)]
             x["__plat__"] = x[plat_col].apply(normalize_platform)
@@ -1225,28 +1381,32 @@ def main():
             xhs_cat   = x.loc[(x["__plat__"] == "XHS")   & (x["__SpeciesNorm__"] == "Cat"), dur_col].astype(float).tolist()
 
             st_echarts(
-                ec_box_species_platform_4cats("Duration (days) — Boarding only",
-                                            rover_dog, xhs_dog, rover_cat, xhs_cat,
-                                            is_currency=False, y_label="days", log_scale=True),
-                height="320px"
+                make_responsive(
+                    ec_box_species_platform_4cats(
+                        "Duration (days) — Boarding only",
+                        rover_dog, xhs_dog, rover_cat, xhs_cat,
+                        is_currency=False, y_label="days", log_scale=True
+                    ),
+                    MOBILE_CARTESIAN,
+                ),
+                height=H_BOX,
+                renderer="svg",
             )
 
-            dr_stats = _true_five_num(rover_dog or [], log_safe=True)  # Dog–Rover
-            dx_stats = _true_five_num(xhs_dog   or [], log_safe=True)  # Dog–XHS
-            cr_stats = _true_five_num(rover_cat or [], log_safe=True)  # Cat–Rover
-            cx_stats = _true_five_num(xhs_cat   or [], log_safe=True)  # Cat–XHS
-            render_summary_table_4cats(dr_stats, dx_stats, cr_stats, cx_stats,
-                                    is_currency=False, unit="days",
-                                    pad_left=56, pad_right=16)
+            dr_stats = _true_five_num(rover_dog or [], log_safe=True)
+            dx_stats = _true_five_num(xhs_dog   or [], log_safe=True)
+            cr_stats = _true_five_num(rover_cat or [], log_safe=True)
+            cx_stats = _true_five_num(xhs_cat   or [], log_safe=True)
+            render_summary_table_4cats(
+                dr_stats, dx_stats, cr_stats, cx_stats,
+                is_currency=False, unit="days", pad_left=56, pad_right=16
+            )
 
-        
-    # --- Daily price split by Platform ---
+    # Daily price split by Platform
     with c3:
         if rate_col and plat_col:
             x = df[[rate_col, plat_col, "__SpeciesNorm__"]].copy()
-            # ⬇️ exclude Drop-In
             x = exclude_dropins(x)
-
             x[rate_col] = _clean_money_like(x[rate_col])
             x = x[np.isfinite(x[rate_col]) & (x[rate_col] > 0)]
             x["__plat__"] = x[plat_col].apply(normalize_platform)
@@ -1257,19 +1417,26 @@ def main():
             xhs_cat   = x.loc[(x["__plat__"] == "XHS")   & (x["__SpeciesNorm__"] == "Cat"), rate_col].astype(float).tolist()
 
             st_echarts(
-                ec_box_species_platform_4cats("Daily price — Boarding only",
-                                            rover_dog, xhs_dog, rover_cat, xhs_cat,
-                                            is_currency=True, log_scale=True),
-                height="320px"
+                make_responsive(
+                    ec_box_species_platform_4cats(
+                        "Daily price — Boarding only",
+                        rover_dog, xhs_dog, rover_cat, xhs_cat,
+                        is_currency=True, log_scale=True
+                    ),
+                    MOBILE_CARTESIAN,
+                ),
+                height=H_BOX,
+                renderer="svg",
             )
 
             dr_stats = _true_five_num(rover_dog or [], log_safe=True)
             dx_stats = _true_five_num(xhs_dog   or [], log_safe=True)
             cr_stats = _true_five_num(rover_cat or [], log_safe=True)
             cx_stats = _true_five_num(xhs_cat   or [], log_safe=True)
-            render_summary_table_4cats(dr_stats, dx_stats, cr_stats, cx_stats,
-                                    is_currency=True,
-                                    pad_left=56, pad_right=16)
+            render_summary_table_4cats(
+                dr_stats, dx_stats, cr_stats, cx_stats,
+                is_currency=True, pad_left=56, pad_right=16
+            )
 
     st.markdown("---")
 
@@ -1283,36 +1450,53 @@ def main():
     else:
         met = compute_revisit_metrics(vis)
 
-        # KPIs / story
         new_count = met["unique_pets"] - met["returning_pets"]
         ret_count = met["returning_pets"]
         revisit_pct = f"{met['revisit_rate_pets']*100:,.1f}%"
         returning_visit_share = f"{met['share_visits_from_returning']*100:,.1f}%"
 
-        c1, c2, c3 = st.columns([1,1,1])
+        c1, c2, c3 = st.columns([1, 1, 1])
 
         with c1:
             st.markdown("**Unique Pets: New vs Returning**")
-            st_echarts(ec_donut_new_vs_return(new_count, ret_count, title="Unique Pets"), height="360px")
+            st_echarts(
+                make_responsive(
+                    ec_donut_new_vs_return(new_count, ret_count, title="Unique Pets"),
+                    MOBILE_DONUT
+                ),
+                height=H_DONUT,
+                renderer="svg",
+            )
 
         with c2:
             st.markdown("**By Species: New vs Returning (unique pets)**")
             st_echarts(
-                ec_stacked_species_new_vs_return(
-                    met["species"],
-                    met["species_new_counts"],
-                    met["species_ret_counts"],
-                    title="Revisit by Species"
+                make_responsive(
+                    ec_stacked_species_new_vs_return(
+                        met["species"],
+                        met["species_new_counts"],
+                        met["species_ret_counts"],
+                        title="Revisit by Species"
+                    ),
+                    MOBILE_BAR
                 ),
-                height="360px"
+                height=H_BAR,
+                renderer="svg",
             )
 
         with c3:
             labels, counts = _bin_time_to_return(met["gap_list"])
             st.markdown("**How Fast Do They Return? (1st → 2nd visit)**")
-            st_echarts(ec_hist_time_to_return(labels, counts, title="Days to 2nd Visit"), height="360px")
+            st_echarts(
+                make_responsive(
+                    ec_hist_time_to_return(labels, counts, title="Days to 2nd Visit"),
+                    MOBILE_BAR
+                ),
+                height=H_BAR,
+                renderer="svg",
+            )
 
-        # Narrative summary (auto)
+        # Narrative summary
         avg_gap_txt = "—" if np.isnan(met["avg_gap"]) else f"{met['avg_gap']:.1f} days"
         med_gap_txt = "—" if np.isnan(met["med_gap"]) else f"{met['med_gap']:.0f} days"
         dog_new, cat_new = met["species_new_counts"]
@@ -1331,49 +1515,56 @@ def main():
 
     st.markdown("---")
 
-
-   # ---------- Main section usage ----------
-    # Put this inside main(), replacing your previous "Top 10 Popular Breeds" prep/render:
-    # (Assumes you already have: df, name_col, breed_col, and st_echarts imported.)
-
-    # ---------- Top 10 Popular Breeds (prep) ----------
+    # ---------- Top 10 Popular Breeds ----------
     if breed_col:
         d_names, d_vals, d_avatars = build_top_breeds_and_matched_avatars(df, "Dog", name_col, breed_col, limit=10)
         c_names, c_vals, c_avatars = build_top_breeds_and_matched_avatars(df, "Cat", name_col, breed_col, limit=10)
     else:
         d_names = d_vals = d_avatars = c_names = c_vals = c_avatars = None
 
-    # ---------- Top 10 Popular Breeds (render) ----------
     st.subheader("Top 10 Popular Breeds")
 
+    # ---- Dogs ----
     if breed_col and d_names:
         st.markdown("#### 🐶 Dogs")
+        per_bar_px = 84
+        min_w = max(720, len(d_names) * per_bar_px + 120)
+
+        echarts_scroll_container_start(min_w)
         st_echarts(
-            ec_bar_horizontal_with_inline_avatars_fullwidth(
-                d_names, d_vals, d_avatars,
-                title_text="Dogs · Popular Breeds (Unique Pets)",
-                dot_size=35,        # ← smaller
-                x_pad=2.0,
+            make_responsive_avatar(
+                ec_bar_vertical_with_inline_avatars_fullheight(
+                    d_names, d_vals, d_avatars,
+                    title_text="Dogs · Popular Breeds (Unique Pets)",
+                )
             ),
-            height="540px"
+            height="600px",
+            renderer="svg",
         )
+        echarts_scroll_container_end()
     else:
         st.info("No dog breed data (after filters).")
 
+    # ---- Cats ----
     if breed_col and c_names:
         st.markdown("#### 🐱 Cats")
+        per_bar_px = 84
+        min_w = max(720, len(c_names) * per_bar_px + 120)
+
+        echarts_scroll_container_start(min_w)
         st_echarts(
-            ec_bar_horizontal_with_inline_avatars_fullwidth(
-                c_names, c_vals, c_avatars,
-                title_text="Cats · Popular Breeds (Unique Pets)",
-                dot_size=35,
-                x_pad=2.0,
+            make_responsive_avatar(
+                ec_bar_vertical_with_inline_avatars_fullheight(
+                    c_names, c_vals, c_avatars,
+                    title_text="Cats · Popular Breeds (Unique Pets)",
+                )
             ),
-            height="560px"
+            height="600px",
+            renderer="svg",
         )
+        echarts_scroll_container_end()
     else:
         st.info("No cat breed data (after filters).")
-    # ================== /Top 10 Popular Breeds (section) ==================
 
 
 if __name__ == "__main__":

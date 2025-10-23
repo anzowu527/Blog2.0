@@ -2,6 +2,8 @@
 from __future__ import annotations
 import streamlit as st
 from datetime import date
+from topia_common import render_topia_title
+
 
 # ---------------- Constants ----------------
 DOG = "dog"
@@ -47,8 +49,9 @@ def _init_state():
     if "lang" not in st.session_state:
         st.session_state.lang = ZH  # 默认中文
 
-def _switch_to(tab: str):
-    st.session_state.svc_view = tab
+def _toggle_service():
+    """Toggle between dog and cat services"""
+    st.session_state.svc_view = CAT if st.session_state.svc_view == DOG else DOG
 
 def _toggle_lang():
     st.session_state.lang = EN if st.session_state.lang == ZH else ZH
@@ -59,9 +62,6 @@ def T(key: str) -> str:
     return _STRINGS[key][lang]
 
 _STRINGS = {
-    "title":            {ZH:"🛎️ 服务与信息",              EN:"🛎️ Service & Info"},
-    "dog_btn":          {ZH:"🐶 狗狗服务",                EN:"🐶 Dog Services"},
-    "cat_btn":          {ZH:"🐱 猫猫服务",                EN:"🐱 Cat Services"},
 
     # shared mini facts (top right cards)
     "hours_area_h3":    {
@@ -93,36 +93,42 @@ _STRINGS = {
     "faq_h3":           {ZH:"《常见问题》",             EN:"《Frequently Asked Questions (FAQ)》"},
 
     # ---------- DOG ----------
-    "dog_services_h3":  {ZH:"《Pawpaw提供的🐩服务》",      EN:"《Services Pawpaw Provide (Dogs)》"},
-    "dog_services_ul":  {ZH:"-  **【🦮遛狗】** 每天早晚至少出门大遛两次，每次30min+。让🐶🐶能有足够的嗅闻散步+能量释放。 \n-  **【🍚喂食】** 可以按既定食谱与时间；接受鲜食，预热熟食等；只会给小狗喂食主人准备的食物+零食，除非主人说小狗可以吃别的零食。\n-  **【💤睡觉】** 🐶🐶如果需要和人睡也没问题～Pawpaw允许狗狗上床上沙发，而且非常喜欢抱着小狗睡觉！如果不是很粘人的小狗也可以独自在大厅睡觉；如果晚上有进笼子/playpen睡觉的习惯希望可以提前告知。\n-  **【🪥护理】** 小狗需要刷牙，梳毛，耳道清洁等需要自备工具哦（避免交叉感染）\n-  **【💊喂药】** 如果有吃药需求会按医嘱口服（请提前说明）",
-                         EN:"- 🏡 **Boarding**: home setting with routine & interaction  \n- 🌞 **Daycare**: daytime care + backyard time  \n- 🚶 **Walks**: sniffy walks for exercise  \n- 🍽️ **Feeding**: per schedule/recipe  \n- 💊 **Medication**: oral per instruction (tell us in advance)"},
-    "dog_env_badges_h3":{ZH:"《环境亮点》",                    EN:"《Environment Highlights》"},
-    "dog_env_badges_ul":{ZH:"- **【封闭后院】** 小狗随时可以去院子玩耍，玩抛接球，跑酷！院子是完全封闭的，不用担心狗狗会出逃。  \n- **【随意活动】** 不笼养！狗狗有更多的活动空间，更像在自己家❤️  \n- **【可上沙发】** 不怕弄脏！我们的沙发都有做防水/保护措施，🛋️都是可以随时清洗的。  \n- **【足够陪伴】** 因为家里24小时都会有人，狗狗会有足够的陪伴！如果有什么突发状况可以马上得知，并且可以立刻采取措施。",
-                         EN:"- ✅ Fenced yard + pool; fetch lovers welcome  \n- ✅ Indoor play (esp. for small/medium dogs)  \n- ✅ Spacious home; guaranteed daily activity  \n- ✅ People at home; consistent routine & walks"},
+    "dog_services_h3":  {ZH:"《Pawpaw提供的🐩服务》",      
+                     EN:"《Services Pawpaw Provides 🐩》"},
 
-    "dog_skills_label": {ZH:"**Pawpaw擅长**：",              EN:"**Areas of Expertise**:"},
+    "dog_services_ul":  {ZH:"-  **【🦮遛狗】** 每天早晚至少出门大遛两次，每次30min+。让🐶🐶能有足够的嗅闻散步+能量释放。 \n-  **【🍚喂食】** 可以按既定食谱与时间；接受鲜食，预热熟食等；只会给小狗喂食主人准备的食物+零食，除非主人说小狗可以吃别的零食。\n-  **【💤睡觉】** 🐶🐶如果需要和人睡也没问题～Pawpaw允许狗狗上床上沙发，而且非常喜欢抱着小狗睡觉！如果不是很粘人的小狗也可以独自在大厅睡觉；如果晚上有进笼子/playpen睡觉的习惯希望可以提前告知。\n-  **【🪥护理】** 小狗需要刷牙，梳毛，耳道清洁等需要自备工具哦（避免交叉感染）\n-  **【💊喂药】** 如果有吃药需求会按医嘱口服（请提前说明）",
+                        EN:"- **🦮 Walks**: At least two long walks every morning and evening (30+ min each) — plenty of sniffing and energy release time!  \n- **🍚 Feeding**: Meals follow your dog’s usual schedule and recipe; fresh or warmed food is fine. Only owner-provided food and treats are given unless otherwise approved.  \n- **💤 Sleeping**: Dogs are welcome to sleep on the bed or sofa! Pawpaw loves cuddling. Independent sleepers can rest in the living room; please let us know if your pup sleeps in a crate/playpen at night.  \n- **🪥 Care**: Please bring your own toothbrush, comb, and ear-cleaning tools (for hygiene and no cross-use).  \n- **💊 Medication**: Oral meds given as instructed—please let us know in advance."},
+
+    "dog_env_badges_h3":{ZH:"《环境亮点》",                    
+                        EN:"《Environment Highlights》"},
+
+    "dog_env_badges_ul":{ZH:"- **【封闭后院】** 小狗随时可以去院子玩耍，玩抛接球，跑酷！院子是完全封闭的，不用担心狗狗会出逃。  \n- **【随意活动】** 不笼养！狗狗有更多的活动空间，更像在自己家❤️  \n- **【可上沙发】** 不怕弄脏！我们的沙发都有做防水/保护措施，🛋️都是可以随时清洗的。  \n- **【足够陪伴】** 因为家里24小时都会有人，狗狗会有足够的陪伴！如果有什么突发状况可以马上得知，并且可以立刻采取措施。",
+                        EN:"- **✅ Fully fenced backyard** — safe and fun space for fetch, running, and play!  \n- **✅ Free movement** — no cages, dogs roam freely just like home ❤️  \n- **✅ Sofa-friendly** — waterproof covers and washable furniture, no worries about messes 🛋️  \n- **✅ Constant company** — someone is always home 24/7, ensuring safety and companionship."},
+
+    "dog_skills_label": {ZH:"**Pawpaw擅长**：",              
+                        EN:"**Pawpaw’s Expertise:**"},
+
     "dog_skills_pills": {ZH:"<span class='pill'>狗狗喂药</span><span class='pill'>分离焦虑舒缓</span><span class='pill'>基础礼仪巩固</span><span class='pill'>老年犬照顾</span><span class='pill'>处理公狗Marking</span><span class='pill'>补被啃的墙角</span><span class='pill'>了解vet流程</span><span class='pill'>小狗礼貌社交</span><span class='pill'>错误行为纠正</span>",
-                         EN:"<span class='pill'>Puppy socialization & potty rhythm</span><span class='pill'>Separation-anxiety easing</span><span class='pill'>Basic manners</span><span class='pill'>Senior care</span>"},
+                        EN:"<span class='pill'>Medication handling</span><span class='pill'>Easing separation anxiety</span><span class='pill'>Basic manners reinforcement</span><span class='pill'>Senior dog care</span><span class='pill'>Managing male dog marking</span><span class='pill'>Repairing chewed corners</span><span class='pill'>Understanding vet procedures</span><span class='pill'>Puppy socialization & etiquette</span><span class='pill'>Correcting unwanted behavior</span>"},
 
    # ---------- CAT ----------
     "cat_services_h3":  {ZH:"《Pawpaw提供🐈的服务》",      
-                        EN:"《What We Offer for Your Sweet Cats 🐱》"},
+                     EN:"《Services Pawpaw Provides 🐈》"},
 
     "cat_services_ul":  {ZH:"- **【🏠住宿】**：猫咪不混养！同一家猫咪会拥有安静独立房间，来之前房间会打扫干净，用紫外线灯消毒好，喷上Feliway。保证猫猫们环境的干净和预防应激。  \n-  **【🪀玩耍】**：胆子大（且家长允许）的猫咪每天下午会有2-3小时的放风时间可以探索房间以外的地方，不会在房间无聊～房间内也有足够的家具让猫猫攀爬玩耍。  \n-  **【🛀护理】**：平时会给猫猫梳掉浮毛；长毛猫如果打结会在家长和猫咪的同意下剃掉。会给猫咪剪指甲如果猫咪不抗拒。  \n-  **【🍽️饮食】**：可以自助餐也可以定时定量，以猫咪平时的习惯而定。  \n-  **【💊吃药】**：按医嘱口服药物（请提前说明）",
-                        EN:"- 🏡 **Overnight Boarding**: peaceful private rooms so your kitty can rest comfortably and stress-free  \n- 🌞 **Daytime Care**: gentle companionship, playtime, and supervision to keep your cat happy  \n- ✂️ **Soft Grooming**: calm brushing and light cleaning when needed  \n- 🍽️ **Thoughtful Feeding**: follow your cat’s exact meal schedule and preferences  \n- 💊 **Medication Support**: oral meds given as instructed (please let us know ahead of time)"},
+                        EN:"- **🏠 Boarding**: Each cat stays in a quiet, private, disinfected room (UV sanitized + Feliway-sprayed) to ensure cleanliness and reduce stress.  \n- **🪀 Playtime**: Confident cats (with owner’s approval) enjoy 2–3 hours of supervised free-roam daily; rooms are furnished for climbing and play.  \n- **🛀 Grooming**: Regular brushing to remove loose fur; gentle shaving of knots (with consent). Nail trimming if your cat is comfortable.  \n- **🍽️ Feeding**: Free-feeding or scheduled meals — adjusted to your cat’s usual routine.  \n- **💊 Medication**: Oral medicine given as prescribed — please notify us in advance."},
 
     "cat_env_badges_h3":{ZH:"《环境亮点》",                    
-                        EN:"《Home Environment Highlights》"},
+                        EN:"《Environment Highlights》"},
 
     "cat_env_badges_ul":{ZH:"- **【独立房间】** 猫咪们都是单间寄养，家里有个别房间是专门给猫猫的。这样猫咪会有自己的安全舒适区，在新环境更容易适应。 \n- **【猫狗隔离】** 猫猫和狗狗是彻底分开的，以防猫咪挠伤狗狗或者狗狗吓到猫咪。  \n- **【用具齐全】** 提供消毒猫砂盆/猫砂/玩具/罐头/小零食（也欢迎自带熟悉的玩具）；也有备猫咪基本生病用药  \n- **【经验丰富】** 不会强迫紧张内向的小猫社交；有处理猫咪尿闭的经验（家里有备应对尿闭的药）；对小猫的异常行为有所了解（呕吐/掉毛/长黑头等）能马上辨别病因。",
-                        EN:"- ✅ Each cat has its own clean, cozy, and well-ventilated private room  \n- ✅ Supervised free-roam time during the day based on comfort 🐾  \n- ✅ Scratchers, toys, and cat trees available (feel free to bring your cat’s favorites!)  \n- ✅ Loving, patient handling for shy or slow-to-warm kitties 💕 — we move at their pace"},
+                        EN:"- **✅ Private rooms** — each cat has its own clean, quiet space for comfort and easy adaptation.  \n- **✅ Cat-dog separation** — cats and dogs are kept completely apart to ensure calm and safety.  \n- **✅ Fully equipped** — sanitized litter boxes, litter, toys, treats, canned food, and basic medicines are provided (you’re welcome to bring familiar items).  \n- **✅ Experienced care** — patient with shy or anxious cats, familiar with urinary blockage and other common feline issues; can quickly spot abnormal behaviors (vomiting, shedding, blackheads, etc.)."},
 
     "cat_skills_label": {ZH:"**Pawpaw擅长**：",              
-                        EN:"**What We’re Good At:**"},
+                        EN:"**Pawpaw’s Expertise:**"},
 
-    "cat_skills_pills": {ZH:"<span class='pill'>新环境适应</span><span class='pill'>紧张/慢热猫</span><span class='pill'>老年猫关怀</span><span class='pill'>多猫分区管理</span><span class='pill'>治疗尿闭</span><span class='pill'>社交性训练</span><span class='pill'></span>",
-                        EN:"<span class='pill'>New environment adjustment</span><span class='pill'>Shy / slow-to-warm cats</span><span class='pill'>Senior cat comfort care</span><span class='pill'>Multi-cat home management</span><span class='pill'>Short-term gentle boarding</span><span class='pill'>Socialization & trust-building</span>"},
-
+    "cat_skills_pills": {ZH:"<span class='pill'>新环境适应</span><span class='pill'>紧张/慢热猫</span><span class='pill'>老年猫关怀</span><span class='pill'>多猫分区管理</span><span class='pill'>治疗尿闭</span><span class='pill'>社交性训练</span>",
+                        EN:"<span class='pill'>Adjusting to new environments</span><span class='pill'>Shy / slow-to-warm cats</span><span class='pill'>Senior cat care</span><span class='pill'>Multi-cat zone management</span><span class='pill'>Handling urinary blockage</span><span class='pill'>Gentle socialization training</span>"},
     }
 # ---------------- Policy i18n (separated & nested) ----------------
 _POLICY = {
@@ -626,8 +632,8 @@ def _shared_css():
       .card-box .price-table th, 
       .card-box .price-table td{
         color:#3a251c !important;
-        padding 16px 14px;
-        line-height:2;   
+        padding: 16px 14px;
+        line-height:1.5;   
         text-align:left;
         vertical-align:middle;
         border-bottom:1px solid rgba(90,59,46,.1);
@@ -689,37 +695,151 @@ def _shared_css():
     letter-spacing:.2px;
     word-break:break-word;
     }
+                
+    /* === NEW: content box under title === */
+    .content-box{
+    margin: 10px auto 12px auto;
+    max-width: 980px;
+    background: #fffaf4;
+    border: 1px solid rgba(58,37,28,.08);
+    border-radius: 14px;
+    padding: 10px 12px;
+    box-shadow: 0 6px 18px rgba(0,0,0,.05);
+    }
+
+    /* pill buttons that are links */
+    a.navpill{
+    display:inline-block; 
+    padding:10px 14px; 
+    margin:6px 6px 0 0; 
+    border-radius:9999px; 
+    text-decoration:none !important;
+    background:#c8a18f; 
+    color:#fff !important; 
+    font-weight:600; 
+    box-shadow:0 4px 8px rgba(0,0,0,.15);
+    transition:transform .08s ease, box-shadow .15s ease, background .2s ease;
+    white-space:nowrap;
+    }
+    a.navpill:hover{ transform:translateY(-1px); box-shadow:0 6px 14px rgba(0,0,0,.18); }
+
+    /* small, neutral pills (used on mobile wrap) */
+    a.navpill.alt{
+    background:#e8d7cf;
+    color:#3a251c !important;
+    }
+
+    /* keep button blocks tight inside the box */
+    .content-box .stButton>button{
+    height:40px; padding:0 14px; border-radius:9999px;
+    }
+
+    /* anchor targets should keep some top space when scrolled to */
+    .anchor-target{
+    scroll-margin-top: 90px;  /* adjust if your title area height changes */
+    }
+
+    /* make the pill row wrap nicely on phones */
+    .nav-row{
+    display:flex; flex-wrap:wrap; align-items:center; gap:8px;
+    }
+    @media (max-width: 640px){
+    .content-box{ padding:8px 10px; }
+    a.navpill{ padding:8px 12px; font-size:13px; }
+    .content-box .stButton>button{ height:36px; padding:0 12px; font-size:13px; }
+    }
+    /* keep pills on one wrapped line and center them */
+    .nav-row{
+    display:flex; flex-wrap:wrap; align-items:center; justify-content:center;
+    gap:8px;
+    }
+
+    /* content box spacing – no mysterious white bar */
+    .content-box{ margin: 12px auto 12px auto; }
+
+    /* Streamlit sometimes leaves empty column wrappers – hide them */
+    .content-box [data-testid="column"] > div:empty{ display:none; }
+    @media (max-width: 640px){
+    .btn-center .stButton>button{
+        display:block !important;
+        margin-left:auto !important;
+        margin-right:auto !important;
+    }
+    }
+
     </style>
+    <script>
+    // NEW: smooth scrolling for in-page nav pills
+    document.addEventListener('click', function(e){
+    const a = e.target.closest('a[href^="#"]');
+    if(!a) return;
+    const id = a.getAttribute('href').slice(1);
+    const el = document.getElementById(id);
+    if(el){
+        e.preventDefault();
+        el.scrollIntoView({behavior:'smooth', block:'start'});
+        history.replaceState(null, '', '#' + id);
+    }
+    }, {passive:false});
+    </script>
+
     """, unsafe_allow_html=True)
+# === NEW: anchor helper ===
+def _anchor_here(anchor_id: str):
+    """Drop a zero-height anchor div with a class that sets scroll-margin-top."""
+    st.markdown(f"<div id='{anchor_id}' class='anchor-target'></div>", unsafe_allow_html=True)
+def _service_toggle_label() -> str:
+    """Label for the single service toggle button based on current view + language."""
+    zh = (st.session_state.lang == ZH)
+    showing_dog = (st.session_state.svc_view == DOG)
+    if zh:
+        return "转至猫猫服务" if showing_dog else "转至狗狗服务"
+    else:
+        return "Switch to Cat Services" if showing_dog else "Switch to Dog Services"
 
+# === NEW: content box under the title ===
+def content_box_under_title():
+    # --- Center the two buttons as a pair ---
+    # Outer row: [spacer | middle | spacer]
+    sp_left, mid, sp_right = st.columns([1, 1.1, 1], gap="small")
+    with mid:
+        # Inner row: [language | service]
+        c_lang, c_toggle = st.columns([1, 1], gap="small")
+        with c_lang:
+            next_label = "English" if st.session_state.lang == ZH else "中文"
+            st.button(next_label, key="btn_lang_toggle_top", on_click=_toggle_lang)
 
-# ---------------- Header (top-right lang toggle + dog/cat) ----------------
-def _header_with_toggle():
-    c_title, c_lang = st.columns([1, 0.18])
-    with c_title:
-        st.markdown(f"## {T('title')}")
-    with c_lang:
-        next_label = "English" if st.session_state.lang == ZH else "中文"
-        st.button(next_label, key="btn_lang_toggle", on_click=_toggle_lang)
+        with c_toggle:
+            st.button(_service_toggle_label(), key="btn_toggle_service", on_click=_toggle_service)
 
-    st.write("")
-    left_sp, col_dog, center_gap, col_cat, right_sp = st.columns([2, 0.9, 0.05, 0.9, 2], gap="small")
-    is_dog = st.session_state.svc_view == DOG
-    with col_dog:
-        st.button(T("dog_btn"), key="btn_dog", disabled=is_dog, on_click=_switch_to, args=(DOG,))
-    with center_gap:
-        st.write("")
-    with col_cat:
-        st.button(T("cat_btn"), key="btn_cat", disabled=not is_dog, on_click=_switch_to, args=(CAT,))
+    # --- Row 2: navigation pills (unchanged) ---
+    zh = (st.session_state.lang == ZH)
+    pills = [
+        ("#service-info", "服务信息" if zh else "Service Info"),
+        ("#hours",        "营业时间" if zh else "Hours"),
+        ("#payment",      "支付与定金" if zh else "Payment"),
+        ("#environment",  "环境" if zh else "Environment"),
+        ("#policy",       "寄养须知" if zh else "Boarding Policy"),
+        ("#faq",          "常见问题" if zh else "FAQ"),
+    ]
+    pills_html = "<div class='nav-row'>" + "".join(
+        f"<a class='navpill{' alt' if i==len(pills)-1 else ''}' href='{href}'>{label}</a>"
+        for i, (href, label) in enumerate(pills)
+    ) + "</div>"
+    st.markdown(pills_html, unsafe_allow_html=True)
 
 # ---------------- Sidebar (cards) ----------------
 def _sidebar_cards(kind: str):
     st.markdown("<div class='sticky-wrap'>", unsafe_allow_html=True)
+
+    # NEW: anchors for Hours and Payment cards
+    _anchor_here("hours")
     st.markdown(f"<div class='card-box'><h4>{T('hours_area_h3')}</h4><div>{T('hours_area_body')}</div></div>", unsafe_allow_html=True)
 
-
+    _anchor_here("payment")
     st.markdown(f"<div class='card-box'><h4>{T('cancel_h3')}</h4><div>{T('cancel_body')}</div></div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
+
 
 # ---------------- Shared policy block ----------------
 def _policy_block(kind: str):
@@ -758,10 +878,12 @@ def _policy_block(kind: str):
 def _render_dog():
     c_main, c_side = st.columns([1.8, 1], gap="large")
     with c_main:
+        _anchor_here("dog-services")      
         st.markdown(f"### {T('dog_services_h3')}")
         st.markdown(T("dog_services_ul"))
         st.markdown("---")
 
+        _anchor_here("environment") 
         st.markdown(f"### {T('dog_env_badges_h3')}")
         st.markdown(T("dog_env_badges_ul"))
         st.markdown(T("dog_skills_label"), unsafe_allow_html=True)
@@ -771,10 +893,12 @@ def _render_dog():
         _sidebar_cards(DOG)
 
     # full-width species-specific policy
+    _anchor_here("policy") 
     _policy_block(DOG)
     st.markdown("---")
-
+    _anchor_here("faq")    
     st.markdown(f"### {T('faq_h3')}")
+
     with st.expander("Will dogs meet the cats?" if st.session_state.lang==EN else "狗狗会见到猫猫吗？"):
         st.write(
             "Nope — they’re completely separated. If a cat is out, dogs stay in their room. "
@@ -848,10 +972,12 @@ def _render_dog():
 def _render_cat():
     c_main, c_side = st.columns([1.8, 1], gap="large")
     with c_main:
+        _anchor_here("cat-services")
         st.markdown(f"### {T('cat_services_h3')}")
         st.markdown(T("cat_services_ul"))
         st.markdown("---")
 
+        _anchor_here("environment")
         st.markdown(f"### {T('cat_env_badges_h3')}")
         st.markdown(T("cat_env_badges_ul"))
         st.markdown(T("cat_skills_label"), unsafe_allow_html=True)
@@ -861,9 +987,11 @@ def _render_cat():
         _sidebar_cards(CAT)
 
     # full-width species-specific policy
+    _anchor_here("policy") 
     _policy_block(CAT)
     st.markdown("---")
 
+    _anchor_here("faq") 
     st.markdown(f"### {T('faq_h3')}")
     with st.expander("Will my cat see dogs?" if st.session_state.lang==EN else "猫猫会见到狗狗吗？"):
         st.write(
@@ -897,11 +1025,23 @@ def _render_cat():
 def main():
     _init_state()
     _shared_css()
-    _header_with_toggle()
+
+    # Title (wrapped for precise CSS control)
+    st.markdown("<div style='height:30px;'></div>", unsafe_allow_html=True)
+
+    st.markdown("<div class='app-title'>", unsafe_allow_html=True)
+    render_topia_title("svc-title", "🐾 Pawpaw Services 🐾")
+    st.markdown("</div>", unsafe_allow_html=True)
+    _anchor_here("service-info")
+    content_box_under_title()
+
+    
+
     if st.session_state.svc_view == DOG:
         _render_dog()
     else:
         _render_cat()
+
 
 if __name__ == "__main__":
     main()

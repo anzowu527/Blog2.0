@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import List, Dict
 import streamlit as st
 from streamlit.components.v1 import html as components_html
+from topia_common import render_topia_title
+
 
 from image_config import BASE_IMAGE_URL
 from get_s3_images import get_index, _safe_join_url
@@ -118,7 +120,8 @@ img {{ max-width:45vh; max-height:50vh; transition:.5s; vertical-align:top; }}
 
 # ---------- main ----------
 def main():
-    st.title("Welcome to Pawpaw Homestay!")
+    st.markdown("<div style='height:60px;'></div>", unsafe_allow_html=True)
+    render_topia_title("svc-title", "Welcome to Pawpaw Homestay!")
 
     # --- Fetch images from S3 ---
     idx = get_index(BUCKET, ABOUT_ROOT1)
@@ -175,7 +178,7 @@ def main():
       position: relative;
       max-width: 900px; width: 90%;
       margin: 0 auto 32px auto;
-      padding: 20px 26px 40px 26px;
+      padding: 28px 26px 40px 26px;  
       background: #fff6ef;
       border: 1px solid #c8a18f33;
       border-radius: 18px;
@@ -185,7 +188,9 @@ def main():
       border-left: 6px solid #c8a18f66;
     }
     .translate-btn {
-      position: absolute; right: 18px; bottom: 14px;
+      position: absolute; right: 12px; bottom: auto;
+      top: 12px; 
+      z-index: 2; 
       background-color: #c8a18f; color: #fff; border: none;
       border-radius: 8px; padding: 4px 10px; font-size: 13px;
       cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.15);
@@ -226,7 +231,7 @@ def main():
     </script>
     """
 
-    components_html(card_html_1, height=580, scrolling=False)
+    components_html(card_html_1, height=580, scrolling=True)
 
     # --- Fetch images from S3 ---
     idx = get_index(BUCKET, ABOUT_ROOT2)
@@ -283,7 +288,7 @@ def main():
       position: relative;
       max-width: 900px; width: 90%;
       margin: 0 auto 32px auto;
-      padding: 20px 26px 40px 26px;
+      padding: 28px 26px 40px 26px;  
       background: #fff6ef;
       border: 1px solid #c8a18f33;
       border-radius: 18px;
@@ -293,7 +298,9 @@ def main():
       border-left: 6px solid #c8a18f66;
     }
     .translate-btn {
-      position: absolute; right: 18px; bottom: 14px;
+      position: absolute; right: 12px; bottom: auto;
+      top: 12px; 
+      z-index: 2; 
       background-color: #c8a18f; color: #fff; border: none;
       border-radius: 8px; padding: 4px 10px; font-size: 13px;
       cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.15);
@@ -335,7 +342,7 @@ def main():
     </script>
     """
 
-    components_html(card_html, height=580, scrolling=False)
+    components_html(card_html, height=580, scrolling=True)
     
 
 if __name__ == "__main__":
