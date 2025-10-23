@@ -8,7 +8,281 @@ from streamlit_echarts import st_echarts, JsCode
 
 DATA_PATH = "data/combined.csv"
 
-# ---------------- Helpers ----------------
+# ---- S3-only avatar helpers (.webp) + circular text placeholder ----
+try:
+    from image_config import BASE_IMAGE_URL
+    from get_s3_images import _safe_join_url, _placeholder_for
+except Exception:
+    BASE_IMAGE_URL = ""
+    def _safe_join_url(a, b): return f"{a.rstrip('/')}/{b.lstrip('/')}"
+    def _placeholder_for(name: str) -> str:
+        return "data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA="
+
+import unicodedata, base64, hashlib
+from functools import lru_cache
+from io import BytesIO
+
+try:
+    import requests
+    from PIL import Image, ImageOps, ImageDraw, ImageFont
+except Exception:
+    requests = None
+    Image = None
+    ImageFont = None
+
+AVATAR_ROOT = "images/avatar/"  # s3://.../images/avatar/<lowercased-NFC-name>.webp
+
+def _norm_lower_nfc(s: str) -> str:
+    return unicodedata.normalize("NFC", (s or "")).strip().lower()
+
+def _avatar_s3_key_for_pet(pet_name: str) -> str:
+    return f"{AVATAR_ROOT}{_norm_lower_nfc(pet_name)}.webp"
+
+def _s3_url_for_key(key: str) -> str:
+    return _safe_join_url(BASE_IMAGE_URL, key)
+
+@lru_cache(maxsize=4096)
+def _fetch_s3_bytes(url: str, timeout=6) -> bytes:
+    if not url or not requests:
+        return b""
+    try:
+        r = requests.get(url, timeout=timeout)
+        if r.ok:
+            return r.content
+    except Exception:
+        pass
+    return b""
+
+def _circle_crop_png_bytes(img_bytes: bytes) -> bytes:
+    if not Image or not img_bytes:
+        return b""
+    try:
+        im = Image.open(BytesIO(img_bytes)).convert("RGBA")
+        size = min(im.width, im.height)
+        im = ImageOps.fit(im, (size, size), centering=(0.5, 0.5))
+        mask = Image.new("L", (size, size), 0)
+        ImageDraw.Draw(mask).ellipse((0, 0, size, size), fill=255)
+        im.putalpha(mask)
+        out = BytesIO()
+        im.save(out, format="PNG")
+        return out.getvalue()
+    except Exception:
+        return b""
+
+def _hash_color(name: str) -> tuple[int,int,int]:
+    """Stable pastel-ish bg color from name."""
+    h = hashlib.sha1((_norm_lower_nfc(name) or "pet").encode("utf-8")).digest()
+    # keep it pleasant: high lightness
+    r, g, b = h[0], h[1], h[2]
+    return int(180 + r % 60), int(160 + g % 70), int(150 + b % 80)
+
+def _best_font(size: int = 64):
+    """Try a Unicode font (for CJK); fall back to default."""
+    if not ImageFont:
+        return None
+    # common fonts that often exist in many envs
+    for fn in ["DejaVuSans.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"]:
+        try:
+            return ImageFont.truetype(fn, size=size)
+        except Exception:
+            pass
+    try:
+        return ImageFont.load_default()
+    except Exception:
+        return None
+
+def _make_circle_text_png_bytes(name: str, size: int = 256) -> bytes:
+    """Create a circular PNG with name centered. Works even if we can't load a TTF."""
+    if not Image:
+        return b""
+    try:
+        bg = _hash_color(name or "pet")
+        im = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+        # draw filled circle
+        draw = ImageDraw.Draw(im)
+        draw.ellipse((0, 0, size, size), fill=bg + (255,))
+
+        # choose text to draw: try full name, else initials fallback
+        text = (name or "Pet").strip()
+        if not text:
+            text = "Pet"
+
+        # pick font & auto-shrink to fit
+        # start large and shrink until it fits inside 80% width
+        max_box = int(size * 0.8)
+        font_size = int(size * 0.38)  # initial guess
+        font = _best_font(font_size)
+        if font:
+            while font_size > 10:
+                bbox = ImageDraw.Draw(im).textbbox((0,0), text, font=font, anchor="lt")
+                tw, th = bbox[2]-bbox[0], bbox[3]-bbox[1]
+                if tw <= max_box and th <= max_box:
+                    break
+                font_size = int(font_size * 0.9)
+                font = _best_font(font_size)
+        # center the text
+        if font:
+            bbox = draw.textbbox((0,0), text, font=font)
+            tw, th = bbox[2]-bbox[0], bbox[3]-bbox[1]
+            x = (size - tw) // 2
+            y = (size - th) // 2
+            # subtle shadow for legibility
+            shadow = (0,0,0,80)
+            draw.text((x+1, y+1), text, font=font, fill=shadow)
+            draw.text((x, y), text, font=font, fill=(255,255,255,230))
+
+        out = BytesIO()
+        im.save(out, format="PNG")
+        return out.getvalue()
+    except Exception:
+        return b""
+
+def circle_avatar_or_placeholder_data_uri(pet_name: str) -> str:
+    """
+    If S3 avatar exists, return its circular PNG data URI.
+    Otherwise, return a circular placeholder with the pet name centered.
+    """
+    key = _avatar_s3_key_for_pet(pet_name)
+    url = _s3_url_for_key(key)
+    raw = _fetch_s3_bytes(url)
+    if raw:
+        circ = _circle_crop_png_bytes(raw)
+        if circ:
+            b64 = base64.b64encode(circ).decode("ascii")
+            return f"data:image/png;base64,{b64}"
+
+    # fallback: generated circle with name
+    ph = _make_circle_text_png_bytes(pet_name or "Pet", size=256)
+    if ph:
+        b64 = base64.b64encode(ph).decode("ascii")
+        return f"data:image/png;base64,{b64}"
+
+    # ultimate fallback: 1x1 transparent
+    return "data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA="
+
+
+# ---------- Data builder: top 10 breeds + matched avatars that exist ----------
+def build_top_breeds_and_matched_avatars(
+    df: pd.DataFrame, species: str, name_col: str, breed_col: str, limit: int = 10
+):
+    reps = representative_breed_per_pet(df[df["__SpeciesNorm__"] == species], name_col, breed_col)
+    if reps.empty:
+        return [], [], {}
+
+    vc = reps["__breed_rep__"].value_counts()
+    top_items = vc.head(limit)
+    breed_names  = top_items.index.tolist()
+    breed_counts = top_items.values.astype(int).tolist()
+
+    # normalized key -> display name
+    name_map = (
+        df[[name_col]]
+        .assign(__name_norm__=safe_name_series(df[name_col]))
+        .dropna(subset=["__name_norm__"])
+        .drop_duplicates("__name_norm__")
+        .set_index("__name_norm__")[name_col]
+        .to_dict()
+    )
+
+    avatars_by_breed = {}
+    for breed in breed_names:
+        pet_keys = (
+            reps.loc[reps["__breed_rep__"] == breed, "__name_norm__"]
+                .dropna().unique().tolist()
+        )
+        items = []
+        for key in pet_keys:
+            display_name = name_map.get(key, key)
+            url = _s3_url_for_key(_avatar_s3_key_for_pet(display_name))
+            raw = _fetch_s3_bytes(url, timeout=6)
+
+            if raw:
+                img_bytes = _circle_crop_png_bytes(raw)
+            else:
+                img_bytes = _make_circle_text_png_bytes(display_name, size=256)
+
+            if img_bytes:
+                data_uri = "data:image/png;base64," + base64.b64encode(img_bytes).decode("ascii")
+                items.append({"img": data_uri, "label": str(display_name)})
+
+        avatars_by_breed[breed] = items
+    return breed_names, breed_counts, avatars_by_breed
+
+
+# ---------- Chart: horizontal bars with inline avatars (image://) ----------
+def ec_bar_horizontal_with_inline_avatars_fullwidth(
+    names, values, avatars_by_breed, title_text="",
+    dot_size=28,           # ↓ smaller (was 48/56)
+    x_pad=2.0,             # a little extra room on the right
+    x_step=1.0,            # spacing between dots along the x (value) axis
+    x_offset=0.6           # where the first dot sits on the x axis
+):
+    import numpy as np
+
+    order = np.argsort(values)[::-1]
+    names_ord  = [names[i] for i in order]
+    values_ord = [int(values[i]) for i in order]
+
+    y_labels = names_ord[::-1]
+    bar_vals = values_ord[::-1]
+
+    mp_data_img = []
+    max_needed_x = 0
+    for breed, count in zip(y_labels, bar_vals):
+        items = avatars_by_breed.get(breed, [])
+        n = len(items)
+        max_needed_x = max(max_needed_x, int((n - 1) * x_step + x_offset + 0.5))
+        for i in range(n):
+            x_pos = i * x_step + x_offset
+            mp_data_img.append({
+                "name": items[i].get("label", ""),
+                "coord": [x_pos, breed],
+                "symbol": f"image://{items[i]['img']}",
+                "symbolSize": dot_size,           # ← smaller circles
+                "symbolKeepAspect": True,
+                "label": {"show": False},
+                "z": 3,
+            })
+
+    x_max = max(max(bar_vals) if bar_vals else 0, max_needed_x) + x_pad
+
+    return {
+        "title": {"text": title_text, "left": "center", "top": 2,
+                  "textStyle": {"fontSize": 16, "color": "#5a3b2e", "fontWeight": "600"}},
+        "tooltip": {"trigger": "axis", "axisPointer": {"type": "shadow"}},
+        "grid": {"left": 130, "right": 30, "top": 46, "bottom": 24, "containLabel": True},
+        "xAxis": {"type": "value", "min": 0, "max": x_max, "axisLabel": {"margin": 6}},
+        "yAxis": {"type": "category", "data": y_labels, "axisLabel": {"interval": 0}},
+        "series": [{
+            "type": "bar",
+            "data": bar_vals,
+            "barWidth": 38,    # a bit slimmer so dots feel lighter
+            "label": {"show": True, "position": "right", "formatter": "{c}"},
+            "itemStyle": {
+                "borderRadius": [20, 20, 20, 20],
+                "shadowBlur": 10,
+                "shadowColor": "rgba(90,59,46,0.18)",
+                "color": {
+                    "type": "linear", "x": 0, "y": 0, "x2": 1, "y2": 0,
+                    "colorStops": [
+                        {"offset": 0, "color": "#f4cbba"},
+                        {"offset": 1, "color": "#8b5e3c"},
+                    ],
+                },
+            },
+            "markPoint": {
+                "symbol": "circle",
+                "symbolSize": dot_size,
+                "data": mp_data_img,
+                "animation": True,
+                "tooltip": {"show": True, "formatter": "{b}"},
+            },
+            "animationDuration": 900,
+            "animationEasing": "cubicOut",
+        }]
+    }
+
+
 def normalize_platform(val: str) -> str:
     if pd.isna(val): return "Other"
     s = str(val).strip().lower()
@@ -923,6 +1197,7 @@ def main():
 
     # ---------- Boarding Price & Duration Distributions (log scale, shared axes) ----------
     st.subheader("Boarding Price & Duration Distributions (log scale)")
+    df = exclude_dropins(df)
 
     # one row, three even charts
     c1, gap, c3 = st.columns([1,0.1, 1]) 
@@ -937,6 +1212,9 @@ def main():
     with c1:
         if dur_col and plat_col:
             x = df[[dur_col, plat_col, "__SpeciesNorm__"]].copy()
+            # ⬇️ exclude Drop-In
+            x = exclude_dropins(x)
+
             x[dur_col] = pd.to_numeric(x[dur_col], errors="coerce")
             x = x[np.isfinite(x[dur_col]) & (x[dur_col] > 0)]
             x["__plat__"] = x[plat_col].apply(normalize_platform)
@@ -947,7 +1225,7 @@ def main():
             xhs_cat   = x.loc[(x["__plat__"] == "XHS")   & (x["__SpeciesNorm__"] == "Cat"), dur_col].astype(float).tolist()
 
             st_echarts(
-                ec_box_species_platform_4cats("Duration (days)",
+                ec_box_species_platform_4cats("Duration (days) — Boarding only",
                                             rover_dog, xhs_dog, rover_cat, xhs_cat,
                                             is_currency=False, y_label="days", log_scale=True),
                 height="320px"
@@ -961,12 +1239,14 @@ def main():
                                     is_currency=False, unit="days",
                                     pad_left=56, pad_right=16)
 
-
-    
+        
     # --- Daily price split by Platform ---
     with c3:
         if rate_col and plat_col:
             x = df[[rate_col, plat_col, "__SpeciesNorm__"]].copy()
+            # ⬇️ exclude Drop-In
+            x = exclude_dropins(x)
+
             x[rate_col] = _clean_money_like(x[rate_col])
             x = x[np.isfinite(x[rate_col]) & (x[rate_col] > 0)]
             x["__plat__"] = x[plat_col].apply(normalize_platform)
@@ -977,7 +1257,7 @@ def main():
             xhs_cat   = x.loc[(x["__plat__"] == "XHS")   & (x["__SpeciesNorm__"] == "Cat"), rate_col].astype(float).tolist()
 
             st_echarts(
-                ec_box_species_platform_4cats("Daily price",
+                ec_box_species_platform_4cats("Daily price — Boarding only",
                                             rover_dog, xhs_dog, rover_cat, xhs_cat,
                                             is_currency=True, log_scale=True),
                 height="320px"
@@ -1051,31 +1331,49 @@ def main():
 
     st.markdown("---")
 
-    
-    # ---------- Top 10 Breeds by Unique Pets (grouped by name first) — SUNBURST ----------
-    st.subheader("Top 10 Breeds by Unique Pets")
-    col_dog3, col_cat3 = st.columns(2)
 
+   # ---------- Main section usage ----------
+    # Put this inside main(), replacing your previous "Top 10 Popular Breeds" prep/render:
+    # (Assumes you already have: df, name_col, breed_col, and st_echarts imported.)
+
+    # ---------- Top 10 Popular Breeds (prep) ----------
     if breed_col:
-        d_breeds, d_bvals = top_breeds_by_species(df, "Dog", name_col, breed_col, limit=10)
-        c_breeds, c_bvals = top_breeds_by_species(df, "Cat", name_col, breed_col, limit=10)
-
-        with col_dog3:
-            if d_breeds:
-                st_echarts(ec_sunburst(d_breeds, d_bvals, "Dogs"), height="460px")
-            else:
-                st.info("No dog breed data (after filters).")
-
-        with col_cat3:
-            if c_breeds:
-                st_echarts(ec_sunburst(c_breeds, c_bvals, "Cats"), height="460px")
-            else:
-                st.info("No cat breed data (after filters).")
+        d_names, d_vals, d_avatars = build_top_breeds_and_matched_avatars(df, "Dog", name_col, breed_col, limit=10)
+        c_names, c_vals, c_avatars = build_top_breeds_and_matched_avatars(df, "Cat", name_col, breed_col, limit=10)
     else:
-        with col_dog3:
-            st.info("Breed column not found.")
-        with col_cat3:
-            st.info("Breed column not found.")
+        d_names = d_vals = d_avatars = c_names = c_vals = c_avatars = None
+
+    # ---------- Top 10 Popular Breeds (render) ----------
+    st.subheader("Top 10 Popular Breeds")
+
+    if breed_col and d_names:
+        st.markdown("#### 🐶 Dogs")
+        st_echarts(
+            ec_bar_horizontal_with_inline_avatars_fullwidth(
+                d_names, d_vals, d_avatars,
+                title_text="Dogs · Popular Breeds (Unique Pets)",
+                dot_size=35,        # ← smaller
+                x_pad=2.0,
+            ),
+            height="540px"
+        )
+    else:
+        st.info("No dog breed data (after filters).")
+
+    if breed_col and c_names:
+        st.markdown("#### 🐱 Cats")
+        st_echarts(
+            ec_bar_horizontal_with_inline_avatars_fullwidth(
+                c_names, c_vals, c_avatars,
+                title_text="Cats · Popular Breeds (Unique Pets)",
+                dot_size=35,
+                x_pad=2.0,
+            ),
+            height="560px"
+        )
+    else:
+        st.info("No cat breed data (after filters).")
+    # ================== /Top 10 Popular Breeds (section) ==================
 
 
 if __name__ == "__main__":
