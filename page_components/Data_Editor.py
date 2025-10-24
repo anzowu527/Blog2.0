@@ -166,6 +166,8 @@ def recompute_tips_and_months(df: pd.DataFrame) -> pd.DataFrame:
 # ---------- page ----------
 def main():
     st.session_state.current_page = "Data_Editor"
+    st.markdown("<div style='height:30px;'></div>", unsafe_allow_html=True)
+
     st.title("📝 Kingdom Data Editor")
 
     # Theme inputs to dark-brown (matches your app palette)

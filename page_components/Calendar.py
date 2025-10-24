@@ -6,7 +6,8 @@ from datetime import datetime, timedelta
 from streamlit_calendar import calendar
 
 def main():
-    st.set_page_config(page_title="📅 Pet Stays Calendar", layout="wide")
+    st.markdown("<div style='height:30px;'></div>", unsafe_allow_html=True)
+
     st.title("📅 Pet Stays Calendar")
 
 

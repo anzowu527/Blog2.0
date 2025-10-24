@@ -212,7 +212,9 @@ def main():
     exp_options, exp_h = donut_options(exp_title, exp_pairs, colors=AUTUMN)
 
     # ---------- Layout ----------
-    st.markdown(f"## 💵 Earnings & Expenses Overview")
+    st.markdown("<div style='height:30px;'></div>", unsafe_allow_html=True)
+
+    st.markdown(f"# 💵 Earnings & Expenses Overview")
     st.caption(f"from {earliest_str} to {latest_str}")
 
     col1, col2 = st.columns([1, 1], gap="large")

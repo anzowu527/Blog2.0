@@ -12,7 +12,6 @@ DATA_PATH = "data/combined.csv"
 BUCKET = "annablog"
 AVATAR_ROOT = "images/avatar/"   # s3://annablog/images/members/<MemberName>/*
 
-AVATAR_ROOT = "images/avatar/"   # s3://annablog/images/avatar/<lowercased-name>.webp
 
 # ---------- S3 avatar helpers (flat files, no indexing needed) ----------
 def _norm_lower(s: str) -> str:
