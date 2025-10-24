@@ -137,15 +137,13 @@ def _make_circle_text_png_bytes(name: str, size: int = 256) -> bytes:
         return out.getvalue()
     except Exception:
         return b""
-
+@st.cache_data(show_spinner=False, ttl=24*3600, max_entries=4096)
 def circle_avatar_or_placeholder_data_uri(pet_name: str) -> str:
-    """
-    If S3 avatar exists, return its circular PNG data URI.
-    Otherwise, return a circular placeholder with the pet name centered.
-    """
+    """Return a circular PNG data URI for this pet (S3 or generated).
+       Cached for 24h to avoid refetching every rerun."""
     key = _avatar_s3_key_for_pet(pet_name)
     url = _s3_url_for_key(key)
-    raw = _fetch_s3_bytes(url)
+    raw = _fetch_s3_bytes(url)  # already lru_cached (good)
     if raw:
         circ = _circle_crop_png_bytes(raw)
         if circ:
@@ -161,6 +159,57 @@ def circle_avatar_or_placeholder_data_uri(pet_name: str) -> str:
     # ultimate fallback: 1x1 transparent
     return "data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA="
 
+def _data_version_from_path(path: str) -> int:
+    try:
+        return int(os.path.getmtime(path))
+    except Exception:
+        return 0
+
+@st.cache_data(show_spinner=False)
+def build_top_breeds_and_matched_avatars_cached(
+    species: str,
+    df_slice: pd.DataFrame,       # only the columns we need
+    name_col: str,
+    breed_col: str,
+    limit: int,
+    data_version: int,
+):
+    """Cached wrapper. Recomputes only when data_version changes."""
+    reps = representative_breed_per_pet(
+        df_slice[df_slice["__SpeciesNorm__"] == species], name_col, breed_col
+    )
+    if reps.empty:
+        return [], [], {}
+
+    vc = reps["__breed_rep__"].value_counts()
+    top_items = vc.head(limit)
+    breed_names  = top_items.index.tolist()
+    breed_counts = top_items.values.astype(int).tolist()
+
+    # normalized key -> display name
+    name_map = (
+        df_slice[[name_col]]
+        .assign(__name_norm__=safe_name_series(df_slice[name_col]))
+        .dropna(subset=["__name_norm__"])
+        .drop_duplicates("__name_norm__")
+        .set_index("__name_norm__")[name_col]
+        .to_dict()
+    )
+
+    avatars_by_breed = {}
+    for breed in breed_names:
+        pet_keys = (
+            reps.loc[reps["__breed_rep__"] == breed, "__name_norm__"]
+                .dropna().unique().tolist()
+        )
+        items = []
+        for key in pet_keys:
+            display_name = name_map.get(key, key)
+            data_uri = circle_avatar_or_placeholder_data_uri(str(display_name))  # ← cached
+            items.append({"img": data_uri, "label": str(display_name)})
+        avatars_by_breed[breed] = items
+
+    return breed_names, breed_counts, avatars_by_breed
 
 # ---------- Data builder: top 10 breeds + matched avatars that exist ----------
 def build_top_breeds_and_matched_avatars(
@@ -1515,21 +1564,31 @@ def main():
 
     st.markdown("---")
 
-    # ---------- Top 10 Popular Breeds ----------
-    if breed_col:
-        d_names, d_vals, d_avatars = build_top_breeds_and_matched_avatars(df, "Dog", name_col, breed_col, limit=10)
-        c_names, c_vals, c_avatars = build_top_breeds_and_matched_avatars(df, "Cat", name_col, breed_col, limit=10)
-    else:
-        d_names = d_vals = d_avatars = c_names = c_vals = c_avatars = None
-
+    # --- Top 10 Popular Breeds ---
     st.subheader("Top 10 Popular Breeds")
 
+    breed_col = get_first_existing(df, ["Breed", "Breeds", "Dog Breed", "Cat Breed"])
+    if not breed_col:
+        st.info("No breed data.")
+        return
+
+    # Create a slim slice with only columns we need (st.cache_data hashes inputs)
+    df_breeds = df[[name_col, breed_col, "__SpeciesNorm__"]].copy()
+    data_ver = _data_version_from_path(DATA_PATH)
+
+    # Use the cached builder (computes once per data version)
+    d_names, d_vals, d_avatars = build_top_breeds_and_matched_avatars_cached(
+        "Dog", df_breeds, name_col, breed_col, limit=10, data_version=data_ver
+    )
+    c_names, c_vals, c_avatars = build_top_breeds_and_matched_avatars_cached(
+        "Cat", df_breeds, name_col, breed_col, limit=10, data_version=data_ver
+    )
+
     # ---- Dogs ----
-    if breed_col and d_names:
+    if d_names:
         st.markdown("#### 🐶 Dogs")
         per_bar_px = 84
         min_w = max(720, len(d_names) * per_bar_px + 120)
-
         echarts_scroll_container_start(min_w)
         st_echarts(
             make_responsive_avatar(
@@ -1538,19 +1597,17 @@ def main():
                     title_text="Dogs · Popular Breeds (Unique Pets)",
                 )
             ),
-            height="600px",
-            renderer="svg",
+            height="600px", renderer="svg",
         )
         echarts_scroll_container_end()
     else:
         st.info("No dog breed data (after filters).")
 
     # ---- Cats ----
-    if breed_col and c_names:
+    if c_names:
         st.markdown("#### 🐱 Cats")
         per_bar_px = 84
         min_w = max(720, len(c_names) * per_bar_px + 120)
-
         echarts_scroll_container_start(min_w)
         st_echarts(
             make_responsive_avatar(
@@ -1559,12 +1616,12 @@ def main():
                     title_text="Cats · Popular Breeds (Unique Pets)",
                 )
             ),
-            height="600px",
-            renderer="svg",
+            height="600px", renderer="svg",
         )
         echarts_scroll_container_end()
     else:
         st.info("No cat breed data (after filters).")
+
 
 
 if __name__ == "__main__":

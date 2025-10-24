@@ -2,6 +2,8 @@ import streamlit as st
 import streamlit.components.v1 as components
 from image_config import BASE_IMAGE_URL
 from get_s3_images import _safe_join_url  # uses URL-safe join with proper quoting
+import streamlit as st
+st.set_page_config(initial_sidebar_state="expanded")
 
 def main():
     PROFILE_KEY = "images/landing/anqi1.webp"
@@ -11,17 +13,31 @@ def main():
     qr_url = _safe_join_url(BASE_IMAGE_URL, QR_KEY)
     st.markdown("""
     <style>
-    /* kill the default Streamlit chrome spacing */
-    header[data-testid="stHeader"]{height:0; min-height:0; visibility:hidden;}
-    [data-testid="stToolbar"]{display:none;}
-    #MainMenu, footer {visibility:hidden;}
-    [data-testid="stAppViewContainer"] > .main, 
+    /* Keep the header visible so the sidebar toggle (hamburger) stays available */
+    header[data-testid="stHeader"]{
+    background: transparent !important;
+    height: auto !important;
+    min-height: unset !important;
+    visibility: visible !important;
+    }
+
+    /* Keep the toolbar visible (it contains the sidebar toggle) */
+    [data-testid="stToolbar"]{
+    display: flex !important;
+    }
+
+    /* Optional: hide Streamlit default menu/footer only */
+    #MainMenu, footer { visibility: hidden !important; }
+
+    /* Trim page padding without nuking the header/toolbar */
+    [data-testid="stAppViewContainer"] > .main,
     [data-testid="block-container"]{
     padding-top: 0 !important;
     padding-bottom: 0 !important;
     }
     </style>
     """, unsafe_allow_html=True)
+
     components.html(
         f"""
         <style>

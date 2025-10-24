@@ -93,8 +93,8 @@ _STRINGS = {
     "faq_h3":           {ZH:"《常见问题》",             EN:"《Frequently Asked Questions (FAQ)》"},
 
     # ---------- DOG ----------
-    "dog_services_h3":  {ZH:"《Pawpaw提供的🐩服务》",      
-                     EN:"《Services Pawpaw Provides 🐩》"},
+    "dog_services_h3":  {ZH:"《Pawpaw提供🐩🐩的服务》",      
+                     EN:"《Services Pawpaw Provides for 🐩》"},
 
     "dog_services_ul":  {ZH:"-  **【🦮遛狗】** 每天早晚至少出门大遛两次，每次30min+。让🐶🐶能有足够的嗅闻散步+能量释放。 \n-  **【🍚喂食】** 可以按既定食谱与时间；接受鲜食，预热熟食等；只会给小狗喂食主人准备的食物+零食，除非主人说小狗可以吃别的零食。\n-  **【💤睡觉】** 🐶🐶如果需要和人睡也没问题～Pawpaw允许狗狗上床上沙发，而且非常喜欢抱着小狗睡觉！如果不是很粘人的小狗也可以独自在大厅睡觉；如果晚上有进笼子/playpen睡觉的习惯希望可以提前告知。\n-  **【🪥护理】** 小狗需要刷牙，梳毛，耳道清洁等需要自备工具哦（避免交叉感染）\n-  **【💊喂药】** 如果有吃药需求会按医嘱口服（请提前说明）",
                         EN:"- **🦮 Walks**: At least two long walks every morning and evening (30+ min each) — plenty of sniffing and energy release time!  \n- **🍚 Feeding**: Meals follow your dog’s usual schedule and recipe; fresh or warmed food is fine. Only owner-provided food and treats are given unless otherwise approved.  \n- **💤 Sleeping**: Dogs are welcome to sleep on the bed or sofa! Pawpaw loves cuddling. Independent sleepers can rest in the living room; please let us know if your pup sleeps in a crate/playpen at night.  \n- **🪥 Care**: Please bring your own toothbrush, comb, and ear-cleaning tools (for hygiene and no cross-use).  \n- **💊 Medication**: Oral meds given as instructed—please let us know in advance."},
@@ -112,8 +112,8 @@ _STRINGS = {
                         EN:"<span class='pill'>Medication handling</span><span class='pill'>Easing separation anxiety</span><span class='pill'>Basic manners reinforcement</span><span class='pill'>Senior dog care</span><span class='pill'>Managing male dog marking</span><span class='pill'>Repairing chewed corners</span><span class='pill'>Understanding vet procedures</span><span class='pill'>Puppy socialization & etiquette</span><span class='pill'>Correcting unwanted behavior</span>"},
 
    # ---------- CAT ----------
-    "cat_services_h3":  {ZH:"《Pawpaw提供🐈的服务》",      
-                     EN:"《Services Pawpaw Provides 🐈》"},
+    "cat_services_h3":  {ZH:"《Pawpaw提供🐈🐈的服务》",      
+                     EN:"《Services Pawpaw Provides for 🐈》"},
 
     "cat_services_ul":  {ZH:"- **【🏠住宿】**：猫咪不混养！同一家猫咪会拥有安静独立房间，来之前房间会打扫干净，用紫外线灯消毒好，喷上Feliway。保证猫猫们环境的干净和预防应激。  \n-  **【🪀玩耍】**：胆子大（且家长允许）的猫咪每天下午会有2-3小时的放风时间可以探索房间以外的地方，不会在房间无聊～房间内也有足够的家具让猫猫攀爬玩耍。  \n-  **【🛀护理】**：平时会给猫猫梳掉浮毛；长毛猫如果打结会在家长和猫咪的同意下剃掉。会给猫咪剪指甲如果猫咪不抗拒。  \n-  **【🍽️饮食】**：可以自助餐也可以定时定量，以猫咪平时的习惯而定。  \n-  **【💊吃药】**：按医嘱口服药物（请提前说明）",
                         EN:"- **🏠 Boarding**: Each cat stays in a quiet, private, disinfected room (UV sanitized + Feliway-sprayed) to ensure cleanliness and reduce stress.  \n- **🪀 Playtime**: Confident cats (with owner’s approval) enjoy 2–3 hours of supervised free-roam daily; rooms are furnished for climbing and play.  \n- **🛀 Grooming**: Regular brushing to remove loose fur; gentle shaving of knots (with consent). Nail trimming if your cat is comfortable.  \n- **🍽️ Feeding**: Free-feeding or scheduled meals — adjusted to your cat’s usual routine.  \n- **💊 Medication**: Oral medicine given as prescribed — please notify us in advance."},
@@ -788,14 +788,17 @@ def _shared_css():
 def _anchor_here(anchor_id: str):
     """Drop a zero-height anchor div with a class that sets scroll-margin-top."""
     st.markdown(f"<div id='{anchor_id}' class='anchor-target'></div>", unsafe_allow_html=True)
+    
+def _toggle_service():
+    st.session_state.svc_view = CAT if st.session_state.svc_view == DOG else DOG
+
 def _service_toggle_label() -> str:
-    """Label for the single service toggle button based on current view + language."""
-    zh = (st.session_state.lang == ZH)
-    showing_dog = (st.session_state.svc_view == DOG)
-    if zh:
-        return "转至猫猫服务" if showing_dog else "转至狗狗服务"
-    else:
-        return "Switch to Cat Services" if showing_dog else "Switch to Dog Services"
+    # Chinese
+    if st.session_state.lang == ZH:
+        return "转至猫猫服务" if st.session_state.svc_view == DOG else "转至狗狗服务"
+    # English
+    return "Switch to Cat Services" if st.session_state.svc_view == DOG else "Switch to Dog Services"
+
 
 # === NEW: content box under the title ===
 def content_box_under_title():
@@ -1028,7 +1031,6 @@ def main():
 
     # Title (wrapped for precise CSS control)
     st.markdown("<div style='height:30px;'></div>", unsafe_allow_html=True)
-
     st.markdown("<div class='app-title'>", unsafe_allow_html=True)
     render_topia_title("svc-title", "🐾 Pawpaw Services 🐾")
     st.markdown("</div>", unsafe_allow_html=True)

@@ -210,6 +210,13 @@ def _pick_arr_dep_cols(df: pd.DataFrame):
 
 def build_premium_clients_rfmD(df: pd.DataFrame, title="Top Clients by Visit Frequency & Spending"):
     st.subheader(title)
+    st.caption(
+        "⭐ **VIP Calculation:** Each client earns a weighted composite score from **Recency (R)**, **Frequency (F)**, "
+        "**Monetary (M)**, **Avg Daily Price (D)**, and **Dog Rating (G)** — all scored on a 1–10 scale. "
+        "Higher F, M, D, and G increase the total; lower R (more recent visit) also helps. "
+        "Clients with total scores above a threshold (and strong F & M) are labeled as **VIP**, "
+        "followed by Gold, Silver, and Bronze tiers."
+    )
 
     if df is None or df.empty:
         st.info("No data available for RFM analysis.")
@@ -222,19 +229,22 @@ def build_premium_clients_rfmD(df: pd.DataFrame, title="Top Clients by Visit Fre
     COL_PEACH  = "#f1b69d"
     COL_BRONZE = "#f6d2c3"
 
-    with st.expander("⚙️ Scoring Weights (R/F/M/D)", expanded=False):
-        c1, c2, c3, c4 = st.columns(4)
+    with st.expander("⚙️ Scoring Weights (R/F/M/D/Rating)", expanded=False):
+        c1, c2, c3, c4, c5 = st.columns(5)
         wR = c1.slider("R weight (Recency, closer is better)", 0.0, 3.0, 1.0, 0.1)
         wF = c2.slider("F weight (Frequency)",                 0.0, 3.0, 1.0, 0.1)
         wM = c3.slider("M weight (Monetary)",                  0.0, 3.0, 1.0, 0.1)
         wD = c4.slider("D weight (Avg Daily Price)",           0.0, 3.0, 1.0, 0.1)
-        st.caption("D (Avg Daily Price) = Total Money ÷ Total Days (each visit min 1 day).")
+        wG = c5.slider("G weight (Dog Rating 1–10)",           0.0, 3.0, 1.0, 0.1)
+        st.caption("D = Total Money ÷ Total Days (each visit min 1 day). G = average of 1–10 dog ratings per client.")
 
+    # ---- Column picks ----
     pet_name_col = _get_first_existing(df, ["Name", "Pet Name", "Pet"])
     species_col  = _get_first_existing(df, ["Species", "__SpeciesNorm__"]) or "__SpeciesNorm__"
     arr_col, dep_col = _pick_arr_dep_cols(df)
     price_col = _get_first_existing(df, ["Price", "Total", "Amount", "Revenue"])
     tips_col  = _get_first_existing(df, ["Tips", "Tip", "Gratuity"])
+    rating_col = _get_first_existing(df, ["dog_rating", "Dog Rating", "Rating"])
 
     if not pet_name_col or species_col not in df.columns:
         st.warning("Missing pet name/species columns for consistent client counting.")
@@ -243,6 +253,7 @@ def build_premium_clients_rfmD(df: pd.DataFrame, title="Top Clients by Visit Fre
         st.warning("Arrival/Departure date columns not found. Please check your column names.")
         return
 
+    # ---- Base normalization ----
     x = df.copy()
 
     if price_col: x[price_col] = _clean_money_like(x[price_col])
@@ -253,61 +264,81 @@ def build_premium_clients_rfmD(df: pd.DataFrame, title="Top Clients by Visit Fre
     if arr_col: x[arr_col] = _parse_dates_safe(x[arr_col])
     if dep_col: x[dep_col] = _parse_dates_safe(x[dep_col])
 
+    # ratings: coerce to numeric and clip 1..10
+    if rating_col:
+        x[rating_col] = pd.to_numeric(x[rating_col], errors="coerce").clip(lower=1, upper=10)
+
     x["__pet_norm__"] = _safe_name_series(x[pet_name_col])
     x["__species__"]  = x[species_col]
     x = x.dropna(subset=["__pet_norm__", "__species__"])
     x["__client_key__"] = x["__pet_norm__"] + " | " + x["__species__"]
 
+    # A visit is grouped by client + (Arr/Dep as available)
     visit_key = ["__client_key__", arr_col or dep_col]
     if arr_col and dep_col:
         visit_key = ["__client_key__", arr_col, dep_col]
 
-    per_visit = (
-        x.groupby(visit_key, dropna=False, as_index=False)
-         .agg(
-             Money=("__Money", "sum"),
-             Arr=(arr_col, "max") if arr_col else (dep_col, "max"),
-             Dep=(dep_col, "max") if dep_col else (arr_col, "max"),
-         )
-    )
+    agg_dict = {
+        "__Money": ("__Money", "sum"),
+        "Arr": (arr_col, "max") if arr_col else (dep_col, "max"),
+        "Dep": (dep_col, "max") if dep_col else (arr_col, "max"),
+    }
+    if rating_col:
+        agg_dict["RatingVisit"] = (rating_col, "mean")  # average rating for that visit
 
+    per_visit = x.groupby(visit_key, dropna=False, as_index=False).agg(**agg_dict)
+    per_visit = per_visit.rename(columns={"__Money": "Money"})
+
+    # Derived per-visit fields
     per_visit["DurationDays"] = per_visit.apply(lambda r: _days_between(r["Arr"], r["Dep"]), axis=1)
     per_visit["DailyPrice_visit"] = per_visit["Money"] / per_visit["DurationDays"]
 
+    # Anchor date for recency
     anchor_date = per_visit[["Arr", "Dep"]].max(axis=1, skipna=True).max()
     if pd.isna(anchor_date):
         anchor_date = pd.Timestamp(pd.Timestamp.today())
 
     per_visit["EndLike"] = per_visit["Dep"].fillna(per_visit["Arr"])
-    rfm = (
-        per_visit.sort_values("EndLike")
-                 .groupby("__client_key__", dropna=True)
-                 .agg(
-                     RecencyDays=("EndLike", lambda s: (anchor_date - s.max()).days if s.max() is not pd.NaT else np.nan),
-                     Frequency=("Money", "count"),
-                     Monetary=("Money", "sum"),
-                     TotalDays=("DurationDays", "sum"),
-                     LastVisit=("EndLike", "max")
-                 )
-                 .reset_index()
-    )
-    rfm["AvgDailyPrice"] = rfm.apply(
-        lambda r: (r["Monetary"] / r["TotalDays"]) if (pd.notna(r["TotalDays"]) and r["TotalDays"] > 0) else np.nan,
-        axis=1
-    )
 
+    # Client-level R, F, M, D (+ G rating)
+    agg_rfm = {
+        "RecencyDays": ("EndLike", lambda s: (anchor_date - s.max()).days if s.max() is not pd.NaT else np.nan),
+        "Frequency":   ("Money", "count"),
+        "Monetary":    ("Money", "sum"),
+        "TotalDays":   ("DurationDays", "sum"),
+        "LastVisit":   ("EndLike", "max"),
+        "AvgDailyPrice": ("DailyPrice_visit", "mean"),
+    }
+    if rating_col:
+        agg_rfm["Rating"] = ("RatingVisit", "mean")
+
+    rfm = per_visit.sort_values("EndLike").groupby("__client_key__", dropna=True).agg(**agg_rfm).reset_index()
+
+    # If no rating present, set neutral default so UI still works
+    if "Rating" not in rfm.columns:
+        rfm["Rating"] = np.nan
+
+    # Scores (all 1..10)
     rfm["R_Score"] = _rfm_quantile_scores(rfm["RecencyDays"], higher_is_better=False, bins=10)
     rfm["F_Score"] = _rfm_quantile_scores(rfm["Frequency"],    higher_is_better=True,  bins=10)
     rfm["M_Score"] = _rfm_quantile_scores(rfm["Monetary"],     higher_is_better=True,  bins=10)
     rfm["D_Score"] = _rfm_quantile_scores(rfm["AvgDailyPrice"],higher_is_better=True,  bins=10)
 
+    # G_Score: direct 1..10 from Rating (clip, round) with neutral fallback
+    rfm["G_Score"] = _rfm_quantile_scores(rfm["Rating"], higher_is_better=True, bins=10)
+    rfm["G_Score"] = rfm["G_Score"].fillna(5).astype(int)
+
+    # Composite
     rfm["RFM_Total"] = (wR * rfm["R_Score"] +
                         wF * rfm["F_Score"] +
                         wM * rfm["M_Score"] +
-                        wD * rfm["D_Score"])
+                        wD * rfm["D_Score"] +
+                        wG * rfm["G_Score"])
+
+    # Segmenting (keep same thresholds; they scale with total weight denom)
+    denom = max(wR + wF + wM + wD + wG, 1.0)
 
     def _segment(row):
-        denom = (wR + wF + wM + wD) if (wR + wF + wM + wD) > 0 else 1.0
         base = row.RFM_Total
         if base >= denom*6.4 and row.F_Score >= 8 and row.M_Score >= 8:
             return "VIP"
@@ -316,8 +347,10 @@ def build_premium_clients_rfmD(df: pd.DataFrame, title="Top Clients by Visit Fre
         if base >= denom*4.0:
             return "Silver"
         return "Bronze"
+
     rfm["Segment"] = rfm.apply(_segment, axis=1)
 
+    # Niceties
     key_split = rfm["__client_key__"].str.split(" | ", n=1, expand=True)
     if isinstance(key_split, pd.DataFrame) and key_split.shape[1] == 2:
         rfm["PetName_norm"] = key_split[0]
@@ -337,6 +370,7 @@ def build_premium_clients_rfmD(df: pd.DataFrame, title="Top Clients by Visit Fre
     vip_adp  = float(rfm.loc[rfm["Segment"] == "VIP", "AvgDailyPrice"].mean())
     non_adp  = float(rfm.loc[rfm["Segment"] != "VIP", "AvgDailyPrice"].mean())
 
+    # KPI cards
     st.markdown(f"""
     <div class="ks-kpi" style="width:100%; margin-bottom: 36px;">
     <style>
@@ -357,7 +391,6 @@ def build_premium_clients_rfmD(df: pd.DataFrame, title="Top Clients by Visit Fre
     <div class="grid">
         <div class="card"><div class="label">Total Clients (pets)</div><div class="value">{total_clients}</div></div>
         <div class="card"><div class="label">VIP Count</div><div class="value">{vip_cnt}</div></div>
-        <div class="card"><div class="label">Gold Count</div><div class="value">{gold_cnt}</div></div>
         <div class="card"><div class="label">VIP Revenue Share</div><div class="value">{vip_share:.1%}</div></div>
         <div class="card"><div class="label">VIP Avg Daily Price</div><div class="value">{vip_adp:.2f}</div></div>
         <div class="card"><div class="label">Non-VIP Avg Daily Price</div><div class="value">{non_adp:.2f}</div></div>
@@ -365,6 +398,7 @@ def build_premium_clients_rfmD(df: pd.DataFrame, title="Top Clients by Visit Fre
     </div>
     """, unsafe_allow_html=True)
 
+    # Segment pie
     seg_counts = rfm["Segment"].value_counts().reindex(["VIP","Gold","Silver","Bronze"]).fillna(0).astype(int)
     pie_data = [{"name": seg, "value": int(cnt)} for seg, cnt in seg_counts.items()]
     pie_opt = {
@@ -384,14 +418,16 @@ def build_premium_clients_rfmD(df: pd.DataFrame, title="Top Clients by Visit Fre
     with c1:
         st_echarts(pie_opt, height="400px")
 
+    # Top VIPs (include rating as tiebreaker)
     top_vip = (
         rfm[rfm["Segment"] == "VIP"]
-        .sort_values(["Monetary", "Frequency", "AvgDailyPrice"], ascending=[False, False, False])
+        .sort_values(["Monetary", "Frequency", "AvgDailyPrice", "G_Score"],
+                     ascending=[False, False, False, False])
         .head(10)
     )
     if not top_vip.empty:
-        names = top_vip["PetName"].tolist()
-        spend = top_vip["Monetary"].round(2).astype(float).tolist()
+        names  = top_vip["PetName"].tolist()
+        spend  = top_vip["Monetary"].round(2).astype(float).tolist()
         visits = top_vip["Frequency"].astype(int).tolist()
 
         bar_opt = {
@@ -415,14 +451,15 @@ def build_premium_clients_rfmD(df: pd.DataFrame, title="Top Clients by Visit Fre
         }
         with c2:
             st_echarts(bar_opt, height="400px")
-        st.caption("Sorted by Total Spend. Largest spender is at the top; tooltip includes Visits.")
+        st.caption("Sorted by Total Spend. Tooltip includes Visits.")
     else:
         with c2:
             st.info("No VIP clients to display yet.")
 
+    # Details table (now shows rating columns too)
     order = pd.CategoricalDtype(categories=["VIP","Gold","Silver","Bronze"], ordered=True)
     rfm["Segment"] = rfm["Segment"].astype(order)
-    show_cols = ["PetName","Species","Segment","RFM_Total","R_Score","F_Score","M_Score","D_Score"]
+    show_cols = ["PetName","Species","Segment","RFM_Total","R_Score","F_Score","M_Score","D_Score","G_Score","Rating"]
     rfm_top = rfm[rfm["Segment"].isin(["VIP","Gold"])]
 
     st.markdown("**Details — VIP & Gold (scores only)**")
@@ -433,7 +470,6 @@ def build_premium_clients_rfmD(df: pd.DataFrame, title="Top Clients by Visit Fre
             rfm_top[show_cols].sort_values(["Segment","RFM_Total"], ascending=[True, False]),
             use_container_width=True
         )
-
 
 def main():
     st.set_page_config(page_title="📈 Kingdom Revenue", layout="wide")
@@ -824,7 +860,7 @@ def main():
                     '</div>'
                 )
                 st.markdown(container_html, unsafe_allow_html=True)
-                                # --- Today’s Drop-In (show only if any) ---
+                # --- Today’s Drop-In (show only if any) ---
                 # Prefer a single-day "Date" column; otherwise use Arrival/Departure containment
                 date_cols = [c for c in tdf.columns if c.strip().lower() == "date"]
                 if date_cols:
@@ -892,6 +928,7 @@ def main():
                 st.markdown("---")
     except Exception as e:
         st.warning(f"Could not render daily operation charts: {e}")
+
 
 
 if __name__ == "__main__":
