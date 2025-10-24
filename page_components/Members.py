@@ -237,7 +237,7 @@ def grid_cards(df: pd.DataFrame, img_size=140, label_col="Name", meta_col=None):
 
 # ---------- page ----------
 def main():
-    st.markdown("<div style='height:60px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height:30px;'></div>", unsafe_allow_html=True)
 
     st.title("🧑‍🤝‍🧑 Members")
     # --- brown accent styling ---

@@ -120,7 +120,7 @@ img {{ max-width:45vh; max-height:50vh; transition:.5s; vertical-align:top; }}
 
 # ---------- main ----------
 def main():
-    st.markdown("<div style='height:60px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height:30px;'></div>", unsafe_allow_html=True)
     render_topia_title("svc-title", "Welcome to Pawpaw Homestay!")
 
     # --- Fetch images from S3 ---

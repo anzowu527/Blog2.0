@@ -788,7 +788,7 @@ def _shared_css():
 def _anchor_here(anchor_id: str):
     """Drop a zero-height anchor div with a class that sets scroll-margin-top."""
     st.markdown(f"<div id='{anchor_id}' class='anchor-target'></div>", unsafe_allow_html=True)
-    
+
 def _toggle_service():
     st.session_state.svc_view = CAT if st.session_state.svc_view == DOG else DOG
 
@@ -1030,7 +1030,6 @@ def main():
     _shared_css()
 
     # Title (wrapped for precise CSS control)
-    st.markdown("<div style='height:30px;'></div>", unsafe_allow_html=True)
     st.markdown("<div class='app-title'>", unsafe_allow_html=True)
     render_topia_title("svc-title", "🐾 Pawpaw Services 🐾")
     st.markdown("</div>", unsafe_allow_html=True)

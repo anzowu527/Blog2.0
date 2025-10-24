@@ -1327,7 +1327,6 @@ def main():
     H_BAR   = "300px"
 
     # --- top spacing / title ---
-    st.markdown("<div style='height:60px;'></div>", unsafe_allow_html=True)
     render_topia_title("svc-title", "📈 Kingdom Statistics")
     st.caption("Excludes shelter dogs & probably need to wait a bit for the page to fully rendered")
 
