@@ -158,6 +158,8 @@ def render_gallery(pets: List[dict], route_param: str):
     }
     .view-button:hover { background-color: #a56f5c; box-shadow: 0 10px 18px rgba(0,0,0,0.24); transform: translateY(-1px); }
     .view-button:active { transform: translateY(0); box-shadow: 0 6px 12px rgba(0,0,0,0.18); }
+
+    
     </style>
     <script>
       const APP_BASE = (window.top?.location ?? window.location).origin

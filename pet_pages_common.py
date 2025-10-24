@@ -10,6 +10,216 @@ from streamlit.components.v1 import html
 from get_s3_images import get_s3_filenames, build_prefix_index
 from image_config import BASE_IMAGE_URL
 
+import re
+AVATAR_ROOT = "images/avatar/"  # s3://annablog/images/avatar/<lowercased-name>.webp
+
+def _norm_lower(s: str) -> str:
+    return (s or "").strip().lower()
+
+def _avatar_url_for(name: str) -> str:
+    key = f"{AVATAR_ROOT}{_norm_lower(name)}.webp"
+    return f"{BASE_IMAGE_URL.rstrip('/')}/{quote(key.lstrip('/'), safe='/')}"
+
+def _slug(s: str) -> str:
+    s = (s or "").strip().lower()
+    s = re.sub(r"[^a-z0-9]+", "-", s)
+    return s.strip("-") or "pet"
+
+def _bilingual_card_html(
+    card_id: str,
+    en_html: str,
+    zh_html: str,
+    *,
+    friends: Optional[List[str]] = None,
+    page_param: Optional[str] = None,
+    card_height: int = 340,           # NEW: desktop/tablet fixed height (px)
+    card_height_mobile: int = 400,    # NEW: mobile fixed height (px)
+    visit_count: Optional[int] = None,
+) -> str:
+    en_id = f"text-en-{card_id}"
+    zh_id = f"text-zh-{card_id}"
+    btn_id = f"ppw-toggle-{card_id}"
+    root_id = f"pawpawCard-{card_id}"
+
+    friends = friends or []
+    chips = []
+    for f in friends:
+        avatar = _avatar_url_for(f)
+        chips.append(
+            f"""
+            <div class="chip" data-name="{quote(f)}" title="{f}">
+              <img src="{avatar}" alt="{f}" loading="lazy" decoding="async" />
+              <span>{f}</span>
+            </div>
+            """
+        )
+    friends_block = (
+        f"""
+        <div class="friends-wrap">
+            <div class="friends-title">Best Friends ｜ 好朋友</div>
+            <div class="chips-row max-2lines">   <!-- add class here if desired -->
+            {''.join(chips)}
+            </div>
+        </div>
+        """ if chips else ""
+    )
+
+    nav_js = ""
+    if page_param:
+        nav_js = f"""
+        (function(){{
+          const TOP = (window.top && window.top.location) ? window.top.location : window.location;
+          const APP_BASE = TOP.origin + TOP.pathname;
+          function goPet(name) {{
+            const url = APP_BASE + '?page={page_param}&{page_param}=' + encodeURIComponent(name);
+            try {{ window.open(url, '_self'); }} catch(e){{ TOP.href = url; }}
+          }}
+          document.querySelectorAll('#{root_id} .chip').forEach(function(chip){{
+            chip.addEventListener('click', function(){{
+              const name = chip.getAttribute('data-name');
+              if(name) goPet(name);
+            }});
+          }});
+        }})();
+        """
+
+    return f"""
+    <style>
+    .ppw-card {{
+        position: relative;
+        display: flex;                 /* vertical stack */
+        flex-direction: column;
+        max-width: 900px; width: 92s%;
+        height: 360px;                 /* fixed desktop height (or inject via param) */
+        margin: 0 auto 14px auto;
+        padding: 22px 20px 22px 20px;
+        background: #fff6ef;
+        border: 1px solid #c8a18f33;
+        border-radius: 18px;
+        box-shadow: 0 6px 18px rgba(95,47,17,.10);
+        color: #5a3b2e;
+        line-height: 1.72;
+        font-size: 17px;
+        font-family: 'Hepta Slab', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial;
+        border-left: 6px solid #c8a18f66;
+        word-break: break-word;        /* long words wrap */
+        overflow: hidden;    
+    }}
+    .ppw-card .ppw-text{{
+        flex: 1 1 auto;                /* take remaining space */
+        min-height: 0;                 /* IMPORTANT: allow shrink in flex container */
+        overflow-y: auto;              /* scroll when too long */
+        padding-right: 6px;            /* room for scrollbar */
+        overscroll-behavior: contain;  /* prevent parent scrolling */
+        -webkit-overflow-scrolling: touch; /* iOS momentum scroll */
+        padding-top: 20px;  
+    }}
+
+    .ppw-card p{{ margin: 0 0 .6em; }}
+    .ppw-card p:last-child{{ margin-bottom: 0; }}
+
+    .ppw-card .translate-btn {{
+        position: absolute; right: 12px; top: 12px; z-index: 2;
+        background-color: #c8a18f; color: #fff; border: none;
+        border-radius: 8px; padding: 4px 10px; font-size: 13px;
+        cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        transition: transform .15s ease, background .2s ease;
+    }}
+    .ppw-card .translate-btn:hover {{ background-color: #b58c7c; transform: translateY(-1px); }}
+
+    .ppw-card .friends-wrap{{ 
+        flex: 0 0 auto;                
+        margin-top: 8px;
+        padding-top: 10px;
+        border-top: 1px dashed rgba(200,161,143,.45); 
+    }}
+
+    .ppw-card .friends-title{{
+        font-weight: 700;
+        font-size: 14px;
+        opacity: .9;
+        margin: 0 0 8px;                /* tighten spacing since we added a divider */
+    }}
+
+    .ppw-card .chips-row{{ display: flex; flex-wrap: wrap; gap: 8px 10px; }}
+    .ppw-card .chip{{
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 10px; border-radius: 9999px;
+      background: rgba(200,161,143,.18); color:#5a3b2e;
+      font-weight: 600; font-size: 13px; cursor: pointer; user-select: none;
+      transition: transform .08s ease, box-shadow .2s ease, background .2s ease;
+    }}
+    .ppw-card .chip:hover{{ transform: translateY(-1px); box-shadow: 0 4px 10px rgba(200,161,143,.28); }}
+    .ppw-card .chip img{{
+      width: 36px;                   /* ← 从 24px 调到 36px */
+        height: 36px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #fff;        /* 边框稍厚一点更显干净 */
+        box-shadow: 0 1px 4px rgba(0,0,0,.12);
+        background:#ffeada;
+    }}
+
+    @media (max-width: 600px){{
+      .ppw-card{{ width: 85%; padding: 16px 14px 16px; font-size: 16px; line-height: 1.65; height: {card_height_mobile}px;}}
+      .ppw-card .translate-btn{{ font-size: 12px; padding: 4px 8px; right: 10px; top: 10px; }}
+      .ppw-card .chip{{ padding: 5px 9px; font-size: 12px; }}
+      .ppw-card .chip img{{ width: 30px; height: 30px; }}
+    }}
+    </style>
+
+    <div class="ppw-card" id="{root_id}">
+        <!-- Scrollable text region inside a fixed-height card -->
+        <div class="ppw-text">
+            <div id="{en_id}" style="display:none;">{en_html}</div>
+            <div id="{zh_id}">{zh_html}</div>
+        </div>
+
+        {friends_block}
+
+        <!-- Toggle button (absolute in the corner) -->
+        <button class="translate-btn" id="{btn_id}">EN / 中文</button>
+    </div>
+
+
+    <script>
+    (function(){{
+      // --- auto-resize the Streamlit iframe to remove bottom whitespace
+      function _resize() {{
+        try {{
+          var h = Math.max(
+            document.body.scrollHeight,
+            document.documentElement.scrollHeight
+          );
+          if (window.frameElement) {{
+            window.frameElement.style.height = h + 'px';
+          }}
+        }} catch (e) {{}}
+      }}
+
+      var root = document.getElementById('{root_id}');
+      var en  = root && root.querySelector('#{en_id}');
+      var zh  = root && root.querySelector('#{zh_id}');
+      var btn = root && root.querySelector('#{btn_id}');
+
+      if (btn && en && zh) {{
+        btn.addEventListener('click', function(){{
+          var showEN = (en.style.display === 'none');
+          en.style.display = showEN ? 'block' : 'none';
+          zh.style.display = showEN ? 'none'  : 'block';
+          btn.textContent  = showEN ? '中文 / EN' : 'EN / 中文';
+          setTimeout(_resize, 0);    // resize after toggle
+        }});
+      }}
+
+      new ResizeObserver(_resize).observe(document.body);
+      window.addEventListener('load', _resize);
+      setTimeout(_resize, 0);
+    }})();
+    {nav_js}
+    </script>
+    """
+
 
 # ---- small utils ----
 _IMG_SUFFIXES: Tuple[str, ...] = (".webp", ".jpg", ".jpeg", ".png", ".gif")
@@ -56,28 +266,80 @@ def render_pet_detail_page(
     person_name: str,
     *,
     bucket: str,
-    root_prefix: str,     # e.g. "images/dogtopia" / "images/catopia" / "images/shelter"
-    title_text: str,      # e.g. "🐶 Story of Appa"
-    page_param: str,      # e.g. "dog", "cat", "shelter"
-    back_page: str,       # e.g. "dogtopia", "catopia", "sheltopia"
-    story_getter: Optional[Callable[[str], str]] = None,  # optional callback
+    root_prefix: str,
+    title_text: str,
+    page_param: str,
+    back_page: str,
+    story_getter: Optional[Callable[[str], str]] = None,
+    friends_getter: Optional[Callable[[str], List[str]]] = None,  # ← 新增
     max_photos: int = 10,
 ) -> None:
+
     """One-liner detail page renderer for Dog/Cat/Shelter detail pages."""
 
     # Title
     st.markdown("<div style='height:30px;'></div>", unsafe_allow_html=True)
 
     st.title(title_text)
-    # Story
-    st.markdown("---")
-    story = None
+    # --- Story (bilingual ppw-card) ---    
+    en_text = None
+    zh_text = None
     if story_getter:
         try:
-            story = story_getter(person_name)
+            story_val = story_getter(person_name)
+            if isinstance(story_val, dict):
+                en_text = story_val.get("en") or story_val.get("EN")
+                zh_text = story_val.get("zh") or story_val.get("ZH") or story_val.get("cn") or story_val.get("CN")
+            elif isinstance(story_val, str):
+                en_text = story_val
         except Exception:
-            story = None
-    st.markdown(story or "*This friend's story is still being written. Stay tuned!*")
+            pass
+
+    # Safe defaults if missing
+    if not en_text:
+        en_text = "<p><em>This friend's story is still being written. Stay tuned!</em></p>"
+    if not zh_text:
+        zh_text = "<p><em>这个小朋友的故事还在写作中，敬请期待～</em></p>"
+
+    # Wrap plain paragraphs if the provided text isn't HTML-ish
+    def _ensure_paragraphs(s: str) -> str:
+        if "<p" in s or "<br" in s or "<div" in s:
+            return s
+        # convert newlines to paragraphs
+        ps = [f"<p>{line.strip()}</p>" for line in s.split("\n") if line.strip()]
+        return "".join(ps) or "<p></p>"
+
+    en_html = _ensure_paragraphs(en_text)
+    zh_html = _ensure_paragraphs(zh_text)
+    friends_list: List[str] = []
+    if friends_getter:
+        try:
+            friends_list = friends_getter(person_name) or []
+        except Exception:
+            friends_list = []
+
+    card_id = _slug(person_name) + "-story"
+
+    CARD_H = 400            # desktop/tablet px
+    CARD_H_MOBILE = 400     # mobile px
+
+    card_html = _bilingual_card_html(
+        card_id,
+        en_html,
+        zh_html,
+        friends=friends_list,
+        page_param=None,
+        card_height=CARD_H,
+        card_height_mobile=CARD_H_MOBILE,
+    )
+
+    # Give iframe headroom; pick the larger (mobile) height + margin
+    iframe_h = max(CARD_H, CARD_H_MOBILE)+40   # 420 + 60 = 480
+    html(card_html, height=iframe_h)
+
+
+    # Ensure some breathing room under the card regardless of iframe quirks
+    st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
 
     # Hide sidebar on detail pages
     st.markdown(
