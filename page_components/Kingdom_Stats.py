@@ -1329,7 +1329,7 @@ def main():
     # --- top spacing / title ---
     st.markdown("<div style='height:60px;'></div>", unsafe_allow_html=True)
     render_topia_title("svc-title", "📈 Kingdom Statistics")
-    st.caption("Excludes shelter dogs.")
+    st.caption("Excludes shelter dogs & probably need to wait a bit for the page to fully rendered")
 
     df = read_df_safe(DATA_PATH)
     if df.empty:

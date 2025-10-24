@@ -175,11 +175,11 @@ def main():
         /* Mobile tweaks: keep everything inside, give a bit more top room */
         @media (max-width: 720px) {{
           .center-wrap {{ min-height: 680px; }}
-          .arc-title   {{ width: min(96vw, 600px); }}
+          .arc-title   {{ width: min(96vw, 600px); transform: translateX(5px);}}
           body{{ padding-top: max(0px, env(safe-area-inset-top)); }}
-          .page{{ transform: translateY(-60px); }}
-          .card-wrap{{ transform: scale(.68); transform-origin: top center; }}
-          .hint{{ transform: translateY(-280px); }}
+          .card-wrap{{ transform: scale(.78); transform-origin: top center; }}
+          .hint{{ transform: translateY(-230px); }}
+          
 
         }}
         @media (max-width: 480px) {{
@@ -340,7 +340,7 @@ def main():
         </script>
         """,
         height=780,   # a tiny bit taller helps short devices, but not required
-        scrolling=True
+        scrolling=False
     )
 
 if __name__ == "__main__":
