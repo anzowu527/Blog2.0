@@ -566,32 +566,32 @@ def PT(key: str, species: str) -> str:
 
 # ---------------- CSS ----------------
 def _shared_css():
-    st.markdown("""
+    st.markdown(f"""
     <style>
-      /* Header buttons */
-      [data-testid="stAppViewContainer"] div[data-testid="stHorizontalBlock"] div.stButton > button{
+      /* Header buttons (global style baseline) */
+      [data-testid="stAppViewContainer"] div[data-testid="stHorizontalBlock"] div.stButton > button{{
         background-color:#c8a18f !important; color:#fff !important; border:none !important;
         border-radius:10px !important; padding:8px 18px !important; font-weight:600 !important;
         box-shadow:0 4px 6px rgba(0,0,0,.2) !important; transition:all .2s ease-in-out;
-      }
-      [data-testid="stAppViewContainer"] div[data-testid="stHorizontalBlock"] div.stButton > button:hover{
+      }}
+      [data-testid="stAppViewContainer"] div[data-testid="stHorizontalBlock"] div.stButton > button:hover{{
         transform:translateY(-1px); box-shadow:0 6px 14px rgba(0,0,0,.25) !important;
-      }
-      [data-testid="stAppViewContainer"] div[data-testid="stHorizontalBlock"] div.stButton > button:disabled{
+      }}
+      [data-testid="stAppViewContainer"] div[data-testid="stHorizontalBlock"] div.stButton > button:disabled{{
         opacity:1 !important; cursor:default !important;
-      }
+      }}
 
       /* Divider + pills */
-      .divider{ border:none; border-top:1px solid rgba(0,0,0,.06); margin:16px 0; }
-      .pill{ display:inline-block; margin:4px 8px 0 0; padding:2px 8px; font-size:12px;
-             background:rgba(200,161,143,.18); color:#5a3b2e; border-radius:12px; }
-      .note{ color:#5a3b2e; font-size:12px; opacity:.9; }
+      .divider{{ border:none; border-top:1px solid rgba(0,0,0,.06); margin:16px 0; }}
+      .pill{{ display:inline-block; margin:4px 8px 0 0; padding:2px 8px; font-size:12px;
+             background:rgba(200,161,143,.18); color:#5a3b2e; border-radius:12px; }}
+      .note{{ color:#5a3b2e; font-size:12px; opacity:.9; }}
 
       /* --- Card box (base style) --- */
-      .sticky-wrap{ position: sticky; top: 12px; }
-      @media (max-width: 900px){ .sticky-wrap{ position: static; } }
+      .sticky-wrap{{ position: sticky; top: 12px; }}
+      @media (max-width: 900px){{ .sticky-wrap{{ position: static; }} }}
 
-      .card-box{
+      .card-box{{
         position:relative;
         border-radius:14px;
         padding:16px 18px;
@@ -603,21 +603,21 @@ def _shared_css():
         color:#fff3e7;
         backdrop-filter:saturate(110%) contrast(102%);
         transition:transform .18s ease, box-shadow .18s ease, background .18s ease;
-      }
-      .card-box:hover{ transform:translateY(-2px); }
-      .card-box h4{ margin:0 0 10px 0; color:#fff !important; letter-spacing:.2px; }
-      .card-box p, .card-box li, .card-box div, .card-box span { color:#fff3e7 !important; }
-      .card-box ul{ margin:8px 0 0 18px; } .card-box li{ margin:4px 0; }
+      }}
+      .card-box:hover{{ transform:translateY(-2px); }}
+      .card-box h4{{ margin:0 0 10px 0; color:#fff !important; letter-spacing:.2px; }}
+      .card-box p, .card-box li, .card-box div, .card-box span {{ color:#fff3e7 !important; }}
+      .card-box ul{{ margin:8px 0 0 18px; }} .card-box li{{ margin:4px 0; }}
 
       /* --- Pricing tables inside card-box --- */
-      .card-box .price-title{
+      .card-box .price-title{{
         margin:0 0 8px 0;
         font-weight:700;
         color:#fff;
         letter-spacing:.2px;
-      }
+      }}
 
-      .card-box .price-table{
+      .card-box .price-table{{
         width:100%;
         border-collapse:separate;
         border-spacing:0;
@@ -627,163 +627,130 @@ def _shared_css():
         background:linear-gradient(180deg,#fffaf4 0%,#fff3e7 100%);
         box-shadow:inset 0 1px 0 rgba(255,255,255,.25),
                    0 2px 8px rgba(0,0,0,.08);
-      }
+      }}
 
       .card-box .price-table th, 
-      .card-box .price-table td{
+      .card-box .price-table td{{
         color:#3a251c !important;
         padding: 16px 14px;
         line-height:1.5;   
         text-align:left;
         vertical-align:middle;
         border-bottom:1px solid rgba(90,59,46,.1);
-      }
+      }}
 
-      .card-box .price-table th{
-        font-weight:700;
-        background:rgba(255,234,218,.6); /* light peach header */
-      }
+      .card-box .price-table th{{ font-weight:700; background:rgba(255,234,218,.6); }}
+      .card-box .price-table tr:last-child td{{ border-bottom:none; }}
+      .card-box .price-table td:first-child{{ font-weight:600; }}
 
-      .card-box .price-table tr:last-child td{
-        border-bottom:none;
-      }
+      /* --- Control table column widths --- */
+      .card-box .price-table{{ table-layout: fixed; }}
 
-      .card-box .price-table td:first-child{
-        font-weight:600;
-      }
-    /* --- Control table column widths --- */
-    .card-box .price-table{
-        table-layout: fixed;  /* 关键：使 colgroup 宽度生效 */
-    }
+      /* 🐶 狗狗表：3列（左列略宽） */
+      .card-box .price-table.col3 col:first-child{{ width:38%; }}
+      .card-box .price-table.col3 col:nth-child(2),
+      .card-box .price-table.col3 col:nth-child(3){{ width:29%; }}
 
-    /* 🐶 狗狗表：3列（左列略宽） */
-    .card-box .price-table.col3 col:first-child{ width:38%; }
-    .card-box .price-table.col3 col:nth-child(2),
-    .card-box .price-table.col3 col:nth-child(3){ width:29%; }
-
-    /* 🐱 猫猫表：4列（左列略宽，其余均分） */
-    .card-box .price-table.col4 col:first-child{ width:38%; }
-    .card-box .price-table.col4 col:nth-child(2),
-    .card-box .price-table.col4 col:nth-child(3),
-    .card-box .price-table.col4 col:nth-child(4){ width:20.6%; }
+      /* 🐱 猫猫表：4列（左列略宽，其余均分） */
+      .card-box .price-table.col4 col:first-child{{ width:38%; }}
+      .card-box .price-table.col4 col:nth-child(2),
+      .card-box .price-table.col4 col:nth-child(3),
+      .card-box .price-table.col4 col:nth-child(4){{ width:20.6%; }}
                 
-    .card-box .price-caption{
-        margin-top:10px;
-        font-size:13px;
-        line-height:1.5;
+      .card-box .price-caption{{
+          margin-top:10px; font-size:13px; line-height:1.5; color:#fff3e7; opacity:0.95;
+      }}
+
+      /* --- Price calculator result box --- */
+      .calc-box{{
+        margin-top:8px; margin-bottom:10px; border-radius:12px; padding:10px 14px;
+        background:linear-gradient(160deg,#c8a18f 0%,#b58b79 100%);
+        border:1px solid rgba(255,255,255,.22);
+        box-shadow:0 10px 22px -12px rgba(90,59,46,.35), 0 4px 10px rgba(0,0,0,.08),
+                    inset 0 1px 0 rgba(255,255,255,.25);
         color:#fff3e7;
-        opacity:0.95;
-    }
-    /* --- Price calculator result box (match card theme) --- */
-    .calc-box{
-    margin-top:8px;
-    margin-bottom:10px;
-    border-radius:12px;
-    padding:10px 14px;
-    background:linear-gradient(160deg,#c8a18f 0%,#b58b79 100%);
-    border:1px solid rgba(255,255,255,.22);
-    box-shadow:0 10px 22px -12px rgba(90,59,46,.35), 0 4px 10px rgba(0,0,0,.08),
-                inset 0 1px 0 rgba(255,255,255,.25);
-    color:#fff3e7;
-    }
+      }}
+      .calc-box .calc-line{{
+        text-align:center; font-size:20px !important; font-weight:700 !important;
+        line-height:1.7 !important; letter-spacing:.2px; word-break:break-word;
+      }}
 
-    .calc-box .calc-line{
-    text-align:center;
-    font-size:20px !important;    /* 放大字号 */
-    font-weight:700 !important;
-    line-height:1.7 !important;
-    letter-spacing:.2px;
-    word-break:break-word;
-    }
-                
-    /* === NEW: content box under title === */
-    .content-box{
-    margin: 10px auto 12px auto;
-    max-width: 980px;
-    background: #fffaf4;
-    border: 1px solid rgba(58,37,28,.08);
-    border-radius: 14px;
-    padding: 10px 12px;
-    box-shadow: 0 6px 18px rgba(0,0,0,.05);
-    }
+      /* === Content box under title === */
+      .content-box{{
+        margin: 10px auto 12px auto; max-width: 980px; background:#fffaf4;
+        border:1px solid rgba(58,37,28,.08); border-radius:14px;
+        padding:10px 12px; box-shadow:0 6px 18px rgba(0,0,0,.05);
+      }}
 
-    /* pill buttons that are links */
-    a.navpill{
-    display:inline-block; 
-    padding:10px 14px; 
-    margin:6px 6px 0 0; 
-    border-radius:9999px; 
-    text-decoration:none !important;
-    background:#c8a18f; 
-    color:#fff !important; 
-    font-weight:600; 
-    box-shadow:0 4px 8px rgba(0,0,0,.15);
-    transition:transform .08s ease, box-shadow .15s ease, background .2s ease;
-    white-space:nowrap;
-    }
-    a.navpill:hover{ transform:translateY(-1px); box-shadow:0 6px 14px rgba(0,0,0,.18); }
+      /* ---- TOP BUTTON ROW: keep 2 buttons on the same line & scale ---- */
+      /* 选中 content-box 内的第一个 columns 容器（就是语言/服务切换那一行） */
+      .content-box [data-testid="stHorizontalBlock"]:first-of-type{{
+        display:flex !important;
+        flex-wrap:nowrap !important;             /* 不允许换行 */
+        justify-content:center !important;
+        gap:10px !important;
+      }}
+      /* 两个列容器可收缩，宽度随视口缩放 */
+      .content-box [data-testid="stHorizontalBlock"]:first-of-type > [data-testid="column"]{{
+        min-width:0 !important;
+        flex:0 1 clamp(140px, 28vw, 220px) !important;
+      }}
+      /* 两个按钮等比缩放，文字不换行 */
+      .content-box [data-testid="stHorizontalBlock"]:first-of-type .stButton > button{{
+        height:clamp(34px, 6.2vw, 44px) !important;
+        padding:0 clamp(12px, 3vw, 18px) !important;
+        font-size:clamp(12px, 2.9vw, 16px) !important;
+        white-space:nowrap !important;
+      }}
+      @media (max-width: 380px){{
+        .content-box [data-testid="stHorizontalBlock"]:first-of-type .stButton > button{{ letter-spacing:0 !important; }}
+      }}
 
-    /* small, neutral pills (used on mobile wrap) */
-    a.navpill.alt{
-    background:#e8d7cf;
-    color:#3a251c !important;
-    }
+      /* Nav pills */
+      a.navpill{{
+        display:inline-block; padding:10px 14px; margin:6px 6px 0 0; border-radius:9999px;
+        text-decoration:none !important; background:#c8a18f; color:#fff !important; font-weight:600;
+        box-shadow:0 4px 8px rgba(0,0,0,.15);
+        transition:transform .08s ease, box-shadow .15s ease, background .2s ease; white-space:nowrap;
+      }}
+      a.navpill:hover{{ transform:translateY(-1px); box-shadow:0 6px 14px rgba(0,0,0,.18); }}
+      a.navpill.alt{{ background:#e8d7cf; color:#3a251c !important; }}
 
-    /* keep button blocks tight inside the box */
-    .content-box .stButton>button{
-    height:40px; padding:0 14px; border-radius:9999px;
-    }
+      /* Keep nav pills tidy on phones */
+      .nav-row{{ display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:8px; }}
+      @media (max-width: 640px){{
+        .content-box{{ padding:8px 10px; }}
+        a.navpill{{ padding:8px 12px; font-size:13px; }}
+        .content-box .stButton>button{{ height:36px; padding:0 12px; font-size:13px; }}
+      }}
 
-    /* anchor targets should keep some top space when scrolled to */
-    .anchor-target{
-    scroll-margin-top: 90px;  /* adjust if your title area height changes */
-    }
+      /* Anchor offset */
+      .anchor-target{{ scroll-margin-top: 90px; }}
 
-    /* make the pill row wrap nicely on phones */
-    .nav-row{
-    display:flex; flex-wrap:wrap; align-items:center; gap:8px;
-    }
-    @media (max-width: 640px){
-    .content-box{ padding:8px 10px; }
-    a.navpill{ padding:8px 12px; font-size:13px; }
-    .content-box .stButton>button{ height:36px; padding:0 12px; font-size:13px; }
-    }
-    /* keep pills on one wrapped line and center them */
-    .nav-row{
-    display:flex; flex-wrap:wrap; align-items:center; justify-content:center;
-    gap:8px;
-    }
-
-    /* content box spacing – no mysterious white bar */
-    .content-box{ margin: 12px auto 12px auto; }
-
-    /* Streamlit sometimes leaves empty column wrappers – hide them */
-    .content-box [data-testid="column"] > div:empty{ display:none; }
-    @media (max-width: 640px){
-    .btn-center .stButton>button{
-        display:block !important;
-        margin-left:auto !important;
-        margin-right:auto !important;
-    }
-    }
-
+      /* Content box spacing & cleanup */
+      .content-box{{ margin:12px auto 12px auto; }}
+      .content-box [data-testid="column"] > div:empty{{ display:none; }}
+      @media (max-width: 640px){{
+        .btn-center .stButton>button{{ display:block !important; margin-left:auto !important; margin-right:auto !important; }}
+      }}
     </style>
-    <script>
-    // NEW: smooth scrolling for in-page nav pills
-    document.addEventListener('click', function(e){
-    const a = e.target.closest('a[href^="#"]');
-    if(!a) return;
-    const id = a.getAttribute('href').slice(1);
-    const el = document.getElementById(id);
-    if(el){
-        e.preventDefault();
-        el.scrollIntoView({behavior:'smooth', block:'start'});
-        history.replaceState(null, '', '#' + id);
-    }
-    }, {passive:false});
-    </script>
 
+    <script>
+      /* Smooth scroll for in-page nav pills */
+      document.addEventListener('click', function(e){{
+        const a = e.target.closest('a[href^="#"]');
+        if(!a) return;
+        const id = a.getAttribute('href').slice(1);
+        const el = document.getElementById(id);
+        if(el){{
+          e.preventDefault();
+          el.scrollIntoView({{behavior:'smooth', block:'start'}});
+          history.replaceState(null, '', '#' + id);
+        }}
+      }}, {{passive:false}});
+    </script>
     """, unsafe_allow_html=True)
+
 # === NEW: anchor helper ===
 def _anchor_here(anchor_id: str):
     """Drop a zero-height anchor div with a class that sets scroll-margin-top."""

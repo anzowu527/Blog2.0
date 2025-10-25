@@ -12,21 +12,25 @@ DATA_PATH = "data/combined.csv"
 BUCKET = "annablog"
 AVATAR_ROOT = "images/avatar/"   # s3://annablog/images/members/<MemberName>/*
 
+import time
+
+def _cache_rev():
+    # bump this when you change folders OR files; you can also tie it to time.time()
+    if "members_img_rev" not in st.session_state:
+        st.session_state.members_img_rev = int(time.time())  # set once per session
+    return st.session_state.members_img_rev
 
 # ---------- S3 avatar helpers (flat files, no indexing needed) ----------
 def _norm_lower(s: str) -> str:
     return unicodedata.normalize("NFC", (s or "")).strip().lower()
 
 def avatar_url_for(member_name: str) -> str:
-    """
-    Returns public HTTPS URL to the member's avatar using the convention:
-      images/avatar/<lowercased name>.webp
-    Fallbacks to a placeholder if name empty.
-    """
     if not member_name:
         return _placeholder_for("Member")
     key = f"{AVATAR_ROOT}{_norm_lower(member_name)}.webp"
-    return _safe_join_url(BASE_IMAGE_URL, key)
+    url = _safe_join_url(BASE_IMAGE_URL, key)
+    # cache-buster so CloudFront/browser fetches fresh assets
+    return f"{url}?rev={_cache_rev()}"
 
 # ---------- data helpers ----------
 def read_df_safe(path: str) -> pd.DataFrame:
