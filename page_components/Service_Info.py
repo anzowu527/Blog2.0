@@ -12,17 +12,6 @@ ZH  = "zh"
 EN  = "en"
 
 # ---------------- State ----------------
-def _S(base_key: str, species: str) -> str:
-    """
-    Species-aware i18n lookup:
-    - Tries key like 'policy_pack_dog' first
-    - Falls back to the generic 'policy_pack' if species-specific not found
-    """
-    lang = st.session_state.lang
-    specific = f"{base_key}_{species}"
-    if specific in _STRINGS:
-        return _STRINGS[specific][lang]
-    return _STRINGS[base_key][lang]
 
 import math
 
@@ -42,19 +31,124 @@ def _charge_days(drop_date, drop_slot, pick_date, pick_slot):
 
     return max(1, math.ceil(diff_slots / 3))
 
-
 def _init_state():
+    # 默认值
     if "svc_view" not in st.session_state:
         st.session_state.svc_view = DOG
     if "lang" not in st.session_state:
-        st.session_state.lang = ZH  # 默认中文
+        st.session_state.lang = ZH
 
-def _toggle_service():
-    """Toggle between dog and cat services"""
-    st.session_state.svc_view = CAT if st.session_state.svc_view == DOG else DOG
+    # 允许通过 ?lang=zh 或 ?lang=en 强制切换
+    try:
+        qp_lang = st.query_params.get("lang")
+        if isinstance(qp_lang, list):
+            qp_lang = qp_lang[0] if qp_lang else None
+    except Exception:
+        qp_lang = None
 
-def _toggle_lang():
-    st.session_state.lang = EN if st.session_state.lang == ZH else ZH
+    if qp_lang:
+        qp_lang = qp_lang.lower()
+        if qp_lang in (ZH, EN):
+            st.session_state.lang = qp_lang
+        # 允许通过 ?view=dog 或 ?view=cat 强制切换
+    try:
+        qp_view = st.query_params.get("view")
+        if isinstance(qp_view, list):
+            qp_view = qp_view[0] if qp_view else None
+    except Exception:
+        qp_view = None
+
+    if qp_view:
+        qp_view = qp_view.lower()
+        if qp_view in (DOG, CAT):
+            st.session_state.svc_view = qp_view
+
+def render_view_toggle_button_same_page():
+    """Same-tab DOG↔CAT toggle: updates ?view= in parent URL and reloads."""
+    cur_view  = st.session_state.get("svc_view", DOG)
+    cur_lang  = st.session_state.get("lang", ZH)
+    next_view = CAT if cur_view == DOG else DOG
+
+    # Label in the current language
+    if cur_lang == ZH:
+        label = "转至猫猫服务" if cur_view == DOG else "转至狗狗服务"
+    else:
+        label = "Switch to Cat Services" if cur_view == DOG else "Switch to Dog Services"
+
+    components_html(f"""
+    <style>
+      .translate-like-btn {{
+        background-color:#c8a18f;color:#fff;border:none;border-radius:8px;
+        padding:6px 14px;font-size:14px;font-weight:700;white-space:nowrap;
+        box-shadow:0 2px 6px rgba(0,0,0,.15);transition:all .2s ease;cursor:pointer;
+      }}
+      .translate-like-btn:hover {{ background-color:#b58c7c; }}
+      .translate-like-wrap {{ display:flex;justify-content:center;align-items:center;margin:6px 0 10px; }}
+    </style>
+    <div class="translate-like-wrap">
+      <button class="translate-like-btn" id="ppw-view-toggle">{label}</button>
+    </div>
+    <script>
+      (function(){{
+        const btn = document.getElementById('ppw-view-toggle');
+        btn.addEventListener('click', function(){{
+          const P = window.parent || window;
+          const url = new URL(P.location.href);
+          // preserve existing params (like lang), just flip view
+          const cur = (url.searchParams.get('view') || '{cur_view}').toLowerCase();
+          const next = (cur === 'dog') ? 'cat' : 'dog';
+          url.searchParams.set('view', next);
+          // keep hash (if any)
+          url.hash = P.location.hash;
+          P.history.replaceState(null, '', url.toString());
+          P.location.reload();
+        }});
+      }})();
+    </script>
+    """, height=56, scrolling=False)
+
+
+from streamlit.components.v1 import html as components_html
+
+def render_translate_toggle_button_same_page():
+    """Same-tab language toggle: updates ?lang= in parent URL and reloads."""
+    cur_lang  = st.session_state.get("lang", "zh")
+    next_lang = "en" if cur_lang == "zh" else "zh"
+    label     = "中文 / EN" if cur_lang == "en" else "EN / 中文"
+
+    components_html(f"""
+    <style>
+      .translate-btn {{
+        background-color:#c8a18f;color:#fff;border:none;border-radius:8px;
+        padding:6px 14px;font-size:14px;font-weight:700;white-space:nowrap;
+        box-shadow:0 2px 6px rgba(0,0,0,.15);transition:all .2s ease;cursor:pointer;
+      }}
+      .translate-btn:hover {{ background-color:#b58c7c; }}
+      .translate-btn-wrap {{ display:flex;justify-content:center;align-items:center;margin:6px 0 10px; }}
+    </style>
+    <div class="translate-btn-wrap">
+      <button class="translate-btn" id="ppw-toggle">{label}</button>
+    </div>
+    <script>
+      (function(){{
+        const btn = document.getElementById('ppw-toggle');
+        btn.addEventListener('click', function(){{
+          const P = window.parent || window;            // <-- use parent, not iframe
+          const url = new URL(P.location.href);
+          const cur = (url.searchParams.get('lang') || '{cur_lang}').toLowerCase();
+          const next = (cur === 'en') ? 'zh' : 'en';
+          url.searchParams.set('lang', next);
+
+          // Stay on the SAME tab:
+          // 1) update address bar without opening a new page
+          P.history.replaceState(null, '', url.toString());
+          // 2) hard reload so Streamlit reads new query params and reruns
+          P.location.reload();
+        }});
+      }})();
+    </script>
+    """, height=56, scrolling=False)  # <-- no `key` here
+
 
 # ---------------- i18n ----------------
 def T(key: str) -> str:
@@ -93,17 +187,17 @@ _STRINGS = {
     "faq_h3":           {ZH:"《常见问题》",             EN:"《Frequently Asked Questions (FAQ)》"},
 
     # ---------- DOG ----------
-    "dog_services_h3":  {ZH:"《Pawpaw提供🐩🐩的服务》",      
-                     EN:"《Services Pawpaw Provides for 🐩》"},
+    "dog_services_h3":  {ZH:"《Pawpaw提供🐩的服务》",      
+                     EN:"《Pawpaw 🐩 Services》"},
 
     "dog_services_ul":  {ZH:"-  **【🦮遛狗】** 每天早晚至少出门大遛两次，每次30min+。让🐶🐶能有足够的嗅闻散步+能量释放。 \n-  **【🍚喂食】** 可以按既定食谱与时间；接受鲜食，预热熟食等；只会给小狗喂食主人准备的食物+零食，除非主人说小狗可以吃别的零食。\n-  **【💤睡觉】** 🐶🐶如果需要和人睡也没问题～Pawpaw允许狗狗上床上沙发，而且非常喜欢抱着小狗睡觉！如果不是很粘人的小狗也可以独自在大厅睡觉；如果晚上有进笼子/playpen睡觉的习惯希望可以提前告知。\n-  **【🪥护理】** 小狗需要刷牙，梳毛，耳道清洁等需要自备工具哦（避免交叉感染）\n-  **【💊喂药】** 如果有吃药需求会按医嘱口服（请提前说明）",
-                        EN:"- **🦮 Walks**: At least two long walks every morning and evening (30+ min each) — plenty of sniffing and energy release time!  \n- **🍚 Feeding**: Meals follow your dog’s usual schedule and recipe; fresh or warmed food is fine. Only owner-provided food and treats are given unless otherwise approved.  \n- **💤 Sleeping**: Dogs are welcome to sleep on the bed or sofa! Pawpaw loves cuddling. Independent sleepers can rest in the living room; please let us know if your pup sleeps in a crate/playpen at night.  \n- **🪥 Care**: Please bring your own toothbrush, comb, and ear-cleaning tools (for hygiene and no cross-use).  \n- **💊 Medication**: Oral meds given as instructed—please let us know in advance."},
+                        EN:"- **【🦮 Walks】**: At least two long walks every morning and evening (30+ min each) — plenty of sniffing and energy release time!  \n- **【🍚Feeding】**: Meals follow your dog’s usual schedule and recipe; fresh or warmed food is fine. Only owner-provided food and treats are given unless otherwise approved.  \n- **【💤 Sleeping】**: Dogs are welcome to sleep on the bed or sofa! Pawpaw loves cuddling. Independent sleepers can rest in the living room; please let us know if your pup sleeps in a crate/playpen at night.  \n- **【🪥 Care】**: Please bring your own toothbrush, comb, and ear-cleaning tools (for hygiene and no cross-use).  \n- **【💊 Medication】**: Oral meds given as instructed—please let us know in advance."},
 
     "dog_env_badges_h3":{ZH:"《环境亮点》",                    
                         EN:"《Environment Highlights》"},
 
     "dog_env_badges_ul":{ZH:"- **【封闭后院】** 小狗随时可以去院子玩耍，玩抛接球，跑酷！院子是完全封闭的，不用担心狗狗会出逃。  \n- **【随意活动】** 不笼养！狗狗有更多的活动空间，更像在自己家❤️  \n- **【可上沙发】** 不怕弄脏！我们的沙发都有做防水/保护措施，🛋️都是可以随时清洗的。  \n- **【足够陪伴】** 因为家里24小时都会有人，狗狗会有足够的陪伴！如果有什么突发状况可以马上得知，并且可以立刻采取措施。",
-                        EN:"- **✅ Fully fenced backyard** — safe and fun space for fetch, running, and play!  \n- **✅ Free movement** — no cages, dogs roam freely just like home ❤️  \n- **✅ Sofa-friendly** — waterproof covers and washable furniture, no worries about messes 🛋️  \n- **✅ Constant company** — someone is always home 24/7, ensuring safety and companionship."},
+                        EN:"- **【Fully fenced backyard】** — safe and fun space for fetch, running, and play!  \n- **【Free Roaming】** — no cages, dogs roam freely just like home ❤️  \n- **【Sofa-friendly】** — waterproof covers and washable furniture, no worries about messes 🛋️  \n- **【Constant company】** — someone is always home 24/7, ensuring safety and companionship."},
 
     "dog_skills_label": {ZH:"**Pawpaw擅长**：",              
                         EN:"**Pawpaw’s Expertise:**"},
@@ -112,17 +206,17 @@ _STRINGS = {
                         EN:"<span class='pill'>Medication handling</span><span class='pill'>Easing separation anxiety</span><span class='pill'>Basic manners reinforcement</span><span class='pill'>Senior dog care</span><span class='pill'>Managing male dog marking</span><span class='pill'>Repairing chewed corners</span><span class='pill'>Understanding vet procedures</span><span class='pill'>Puppy socialization & etiquette</span><span class='pill'>Correcting unwanted behavior</span>"},
 
    # ---------- CAT ----------
-    "cat_services_h3":  {ZH:"《Pawpaw提供🐈🐈的服务》",      
-                     EN:"《Services Pawpaw Provides for 🐈》"},
+    "cat_services_h3":  {ZH:"《Pawpaw提供🐈的服务》",      
+                     EN:"《Pawpaw 🐈 Services》"},
 
     "cat_services_ul":  {ZH:"- **【🏠住宿】**：猫咪不混养！同一家猫咪会拥有安静独立房间，来之前房间会打扫干净，用紫外线灯消毒好，喷上Feliway。保证猫猫们环境的干净和预防应激。  \n-  **【🪀玩耍】**：胆子大（且家长允许）的猫咪每天下午会有2-3小时的放风时间可以探索房间以外的地方，不会在房间无聊～房间内也有足够的家具让猫猫攀爬玩耍。  \n-  **【🛀护理】**：平时会给猫猫梳掉浮毛；长毛猫如果打结会在家长和猫咪的同意下剃掉。会给猫咪剪指甲如果猫咪不抗拒。  \n-  **【🍽️饮食】**：可以自助餐也可以定时定量，以猫咪平时的习惯而定。  \n-  **【💊吃药】**：按医嘱口服药物（请提前说明）",
-                        EN:"- **🏠 Boarding**: Each cat stays in a quiet, private, disinfected room (UV sanitized + Feliway-sprayed) to ensure cleanliness and reduce stress.  \n- **🪀 Playtime**: Confident cats (with owner’s approval) enjoy 2–3 hours of supervised free-roam daily; rooms are furnished for climbing and play.  \n- **🛀 Grooming**: Regular brushing to remove loose fur; gentle shaving of knots (with consent). Nail trimming if your cat is comfortable.  \n- **🍽️ Feeding**: Free-feeding or scheduled meals — adjusted to your cat’s usual routine.  \n- **💊 Medication**: Oral medicine given as prescribed — please notify us in advance."},
+                        EN:"- **【🏠Boarding】**: Each cat stays in a quiet, private, disinfected room (UV sanitized + Feliway-sprayed) to ensure cleanliness and reduce stress.  \n- **【🪀Playtime】**: Confident cats (with owner’s approval) enjoy 2–3 hours of supervised free-roam daily; rooms are furnished for climbing and play.  \n- **【🛀Cares】**: Regular brushing to remove loose fur; gentle shaving of knots (with consent). Nail trimming if your cat is comfortable.  \n- **【🍽️Feeding】**: Free-feeding or scheduled meals — adjusted to your cat’s usual routine.  \n- **【💊Medication】**: Oral medicine given as prescribed — please notify us in advance."},
 
     "cat_env_badges_h3":{ZH:"《环境亮点》",                    
                         EN:"《Environment Highlights》"},
 
     "cat_env_badges_ul":{ZH:"- **【独立房间】** 猫咪们都是单间寄养，家里有个别房间是专门给猫猫的。这样猫咪会有自己的安全舒适区，在新环境更容易适应。 \n- **【猫狗隔离】** 猫猫和狗狗是彻底分开的，以防猫咪挠伤狗狗或者狗狗吓到猫咪。  \n- **【用具齐全】** 提供消毒猫砂盆/猫砂/玩具/罐头/小零食（也欢迎自带熟悉的玩具）；也有备猫咪基本生病用药  \n- **【经验丰富】** 不会强迫紧张内向的小猫社交；有处理猫咪尿闭的经验（家里有备应对尿闭的药）；对小猫的异常行为有所了解（呕吐/掉毛/长黑头等）能马上辨别病因。",
-                        EN:"- **✅ Private rooms** — each cat has its own clean, quiet space for comfort and easy adaptation.  \n- **✅ Cat-dog separation** — cats and dogs are kept completely apart to ensure calm and safety.  \n- **✅ Fully equipped** — sanitized litter boxes, litter, toys, treats, canned food, and basic medicines are provided (you’re welcome to bring familiar items).  \n- **✅ Experienced care** — patient with shy or anxious cats, familiar with urinary blockage and other common feline issues; can quickly spot abnormal behaviors (vomiting, shedding, blackheads, etc.)."},
+                        EN:"- **【Private rooms】** — each cat has its own clean, quiet space for comfort and easy adaptation.  \n- **【Cat-dog separation】** — cats and dogs are kept completely apart to ensure calm and safety.  \n- **【Fully equipped】** — sanitized litter boxes, litter, toys, treats, canned food, and basic medicines are provided (you’re welcome to bring familiar items).  \n- **【Experienced care】** — patient with shy or anxious cats, familiar with urinary blockage and other common feline issues; can quickly spot abnormal behaviors (vomiting, shedding, blackheads, etc.)."},
 
     "cat_skills_label": {ZH:"**Pawpaw擅长**：",              
                         EN:"**Pawpaw’s Expertise:**"},
@@ -675,37 +769,15 @@ def _shared_css():
         line-height:1.7 !important; letter-spacing:.2px; word-break:break-word;
       }}
 
-      /* === Content box under title === */
-      .content-box{{
-        margin: 10px auto 12px auto; max-width: 980px; background:#fffaf4;
-        border:1px solid rgba(58,37,28,.08); border-radius:14px;
-        padding:10px 12px; box-shadow:0 6px 18px rgba(0,0,0,.05);
-      }}
+      
 
-      /* ---- TOP BUTTON ROW: keep 2 buttons on the same line & scale ---- */
-      /* 选中 content-box 内的第一个 columns 容器（就是语言/服务切换那一行） */
-      .content-box [data-testid="stHorizontalBlock"]:first-of-type{{
-        display:flex !important;
-        flex-wrap:nowrap !important;             /* 不允许换行 */
-        justify-content:center !important;
-        gap:10px !important;
-      }}
-      /* 两个列容器可收缩，宽度随视口缩放 */
-      .content-box [data-testid="stHorizontalBlock"]:first-of-type > [data-testid="column"]{{
-        min-width:0 !important;
-        flex:0 1 clamp(140px, 28vw, 220px) !important;
-      }}
-      /* 两个按钮等比缩放，文字不换行 */
-      .content-box [data-testid="stHorizontalBlock"]:first-of-type .stButton > button{{
-        height:clamp(34px, 6.2vw, 44px) !important;
-        padding:0 clamp(12px, 3vw, 18px) !important;
-        font-size:clamp(12px, 2.9vw, 16px) !important;
-        white-space:nowrap !important;
-      }}
-      @media (max-width: 380px){{
-        .content-box [data-testid="stHorizontalBlock"]:first-of-type .stButton > button{{ letter-spacing:0 !important; }}
-      }}
+    /* 极窄屏避免字距撑开 */
+    @media (max-width: 380px){{
+        .navpill.control.rect{{ letter-spacing:0; }}
+    }}
 
+    /* 你原有的导航 pills 行：保持居中可换行 */
+    .nav-row{{ display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:8px; }}
       /* Nav pills */
       a.navpill{{
         display:inline-block; padding:10px 14px; margin:6px 6px 0 0; border-radius:9999px;
@@ -756,34 +828,82 @@ def _anchor_here(anchor_id: str):
     """Drop a zero-height anchor div with a class that sets scroll-margin-top."""
     st.markdown(f"<div id='{anchor_id}' class='anchor-target'></div>", unsafe_allow_html=True)
 
-def _toggle_service():
-    st.session_state.svc_view = CAT if st.session_state.svc_view == DOG else DOG
 
-def _service_toggle_label() -> str:
-    # Chinese
-    if st.session_state.lang == ZH:
-        return "转至猫猫服务" if st.session_state.svc_view == DOG else "转至狗狗服务"
-    # English
-    return "Switch to Cat Services" if st.session_state.svc_view == DOG else "Switch to Dog Services"
+from streamlit.components.v1 import html as components_html
 
+def render_top_controls_same_page():
+    """Centered row: [ Translate ]  [ Dog/Cat Toggle ] — both same-tab updates."""
+    cur_lang = st.session_state.get("lang", "zh")
+    cur_view = st.session_state.get("svc_view", "dog")
+
+    # labels
+    translate_label = "中文 / EN" if cur_lang == "en" else "EN / 中文"
+    if cur_lang == "zh":
+        view_label = "转至猫猫服务" if cur_view == "dog" else "转至狗狗服务"
+    else:
+        view_label = "Switch to 🐱 Services" if cur_view == "dog" else "Switch to 🐶 Services"
+
+    components_html(f"""
+    <style>
+      .ppw-btn-row {{
+        display:flex; justify-content:center; align-items:center; gap:12px;
+        margin:6px 0 10px;
+        flex-wrap:wrap;   /* small screens wrap nicely */
+      }}
+      .ppw-btn {{
+        background-color:#c8a18f; color:#fff; border:none; border-radius:8px;
+        padding:6px 14px; font-size:14px; font-weight:700; white-space:nowrap;
+        box-shadow:0 2px 6px rgba(0,0,0,.15); transition:all .2s ease; cursor:pointer;
+      }}
+      .ppw-btn:hover {{ background-color:#b58c7c; }}
+    </style>
+
+    <div class="ppw-btn-row">
+      <button class="ppw-btn" id="ppw-translate">{translate_label}</button>
+      <button class="ppw-btn" id="ppw-view">{view_label}</button>
+    </div>
+
+    <script>
+      (function(){{
+        const P = window.parent || window;
+
+        // translate toggle — flip ?lang=
+        const tBtn = document.getElementById('ppw-translate');
+        if (tBtn) {{
+          tBtn.addEventListener('click', function(){{
+            const url = new URL(P.location.href);
+            const cur = (url.searchParams.get('lang') || '{cur_lang}').toLowerCase();
+            const next = (cur === 'en') ? 'zh' : 'en';
+            url.searchParams.set('lang', next);
+            url.hash = P.location.hash;            // keep hash
+            P.history.replaceState(null, '', url.toString());
+            P.location.reload();
+          }});
+        }}
+
+        // view toggle — flip ?view=
+        const vBtn = document.getElementById('ppw-view');
+        if (vBtn) {{
+          vBtn.addEventListener('click', function(){{
+            const url = new URL(P.location.href);
+            const cur = (url.searchParams.get('view') || '{cur_view}').toLowerCase();
+            const next = (cur === 'dog') ? 'cat' : 'dog';
+            url.searchParams.set('view', next);
+            url.hash = P.location.hash;            // keep hash
+            P.history.replaceState(null, '', url.toString());
+            P.location.reload();
+          }});
+        }}
+      }})();
+    </script>
+    """, height=60, scrolling=False)
 
 # === NEW: content box under the title ===
 def content_box_under_title():
-    # --- Center the two buttons as a pair ---
-    # Outer row: [spacer | middle | spacer]
-    sp_left, mid, sp_right = st.columns([1, 1.1, 1], gap="small")
-    with mid:
-        # Inner row: [language | service]
-        c_lang, c_toggle = st.columns([1, 1], gap="small")
-        with c_lang:
-            next_label = "English" if st.session_state.lang == ZH else "中文"
-            st.button(next_label, key="btn_lang_toggle_top", on_click=_toggle_lang)
+    render_top_controls_same_page()
 
-        with c_toggle:
-            st.button(_service_toggle_label(), key="btn_toggle_service", on_click=_toggle_service)
-
-    # --- Row 2: navigation pills (unchanged) ---
-    zh = (st.session_state.lang == ZH)
+    # —— Row 2: 导航 pills（原样保留） ——
+    zh = (st.session_state.lang == "zh")
     pills = [
         ("#service-info", "服务信息" if zh else "Service Info"),
         ("#hours",        "营业时间" if zh else "Hours"),
@@ -797,6 +917,7 @@ def content_box_under_title():
         for i, (href, label) in enumerate(pills)
     ) + "</div>"
     st.markdown(pills_html, unsafe_allow_html=True)
+
 
 # ---------------- Sidebar (cards) ----------------
 def _sidebar_cards(kind: str):
@@ -999,6 +1120,7 @@ def main():
     # Title (wrapped for precise CSS control)
     st.markdown("<div class='app-title'>", unsafe_allow_html=True)
     render_topia_title("svc-title", "🐾 Pawpaw Services 🐾")
+    
     st.markdown("</div>", unsafe_allow_html=True)
     _anchor_here("service-info")
     content_box_under_title()
