@@ -209,6 +209,10 @@ with st.sidebar:
     if st.button("📈 Kingdom Stats", use_container_width=True):
         set_params(page="kingdom_stats", dog=None, cat=None, shelter=None); st.rerun()
     
+    if st.button("🖼️ Photo Gallery", use_container_width=True):
+        set_params(page="photo_gallery", dog=None, cat=None, shelter=None); st.rerun()
+
+    
     st.markdown("## Pawpaw Clients")
 
     if st.button("🐶 Dogtopia", use_container_width=True):
@@ -301,7 +305,6 @@ if page == "landing":
     from page_components import Landing_Page
     Landing_Page.main()
 
-
 elif page == "dogtopia":
     from page_components import Dogtopia
     Dogtopia.main()
@@ -326,6 +329,9 @@ elif page == "service_info":
     from page_components import Service_Info
     Service_Info.main()
 
+elif page == "photo_gallery":
+    from page_components import Photo_Gallery
+    Photo_Gallery.main()
 
 elif page == "members":
     from page_components import Members
