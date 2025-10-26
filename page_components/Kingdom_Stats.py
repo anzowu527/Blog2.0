@@ -258,6 +258,20 @@ def build_top_breeds_and_matched_avatars(
         avatars_by_breed[breed] = items
     return breed_names, breed_counts, avatars_by_breed
 
+def _normalize_breed_label(s: str) -> str:
+    """
+    Collapse all '*oodle' names (Labradoodle, Goldendoodle, Bernedoodle, Cavoodle, etc.)
+    into a single bucket 'Poodle Mixed'. Matches any breed text containing 'oodle'.
+    """
+    if not isinstance(s, str):
+        return "Unknown"
+    txt = s.strip()
+    if "oodle" in txt.lower():
+        return "Poodle Mixed"
+    if "poo" in txt.lower():
+        return "Poodle Mixed"
+    return txt if txt else "Unknown"
+
 
 def normalize_platform(val: str) -> str:
     if pd.isna(val): return "Other"
@@ -547,21 +561,31 @@ def top_days_by_species(df: pd.DataFrame, species: str, name_col: str, arr_col: 
 def representative_breed_per_pet(df: pd.DataFrame, name_col: str, breed_col: str) -> pd.DataFrame:
     """
     For each pet (by normalized name), choose the most frequent non-empty breed as representative.
+    Collapses any '*oodle' strings into 'Poodle Mixed'.
     Returns a DataFrame with columns: __name_norm__, __breed_rep__.
     """
     x = df[[name_col, breed_col]].copy()
     x["__name_norm__"] = safe_name_series(x[name_col])
-    x["__breed__"] = x[breed_col].fillna("Unknown").astype(str).str.strip()
-    x.loc[x["__breed__"] == "", "__breed__"] = "Unknown"
-    # mode per pet (break ties by first occurrence)
+
+    # raw breed text -> cleaned text -> bucketed/normalized label
+    x["__breed_raw__"] = x[breed_col].fillna("Unknown").astype(str).str.strip()
+    x.loc[x["__breed_raw__"] == "", "__breed_raw__"] = "Unknown"
+    x["__breed_norm__"] = x["__breed_raw__"].apply(_normalize_breed_label)
+
+    # mode per pet (break ties by first occurrence) on the *normalized* label
     counts = (
-        x.groupby(["__name_norm__", "__breed__"])
+        x.groupby(["__name_norm__", "__breed_norm__"])
          .size()
          .reset_index(name="cnt")
          .sort_values(["__name_norm__", "cnt"], ascending=[True, False])
     )
-    reps = counts.groupby("__name_norm__", as_index=False).first().rename(columns={"__breed__":"__breed_rep__"})
+    reps = (
+        counts.groupby("__name_norm__", as_index=False)
+              .first()
+              .rename(columns={"__breed_norm__": "__breed_rep__"})
+    )
     return reps[["__name_norm__", "__breed_rep__"]]
+
 
 def top_breeds_by_species(df: pd.DataFrame, species: str, name_col: str, breed_col: str, limit=10):
     """
@@ -1596,7 +1620,7 @@ def main():
                     title_text="Dogs · Popular Breeds (Unique Pets)",
                 )
             ),
-            height="600px", renderer="svg",
+            height="620px", renderer="svg",
         )
         echarts_scroll_container_end()
     else:

@@ -931,7 +931,7 @@ Bedtime routine: find the perfect spot, dig-dig-dig, do a little dance, and then
 <b>可乐1</b> hi
 """
     },
-    "咪豆": {
+    "mido": {
        "en": """
 <b>咪豆</b> (Mido) has those brilliant Border Collie eyes — always watching me, tracking my movements, waiting for cues.  
 He’s a true ball lover. If I ask, “Where’s your ball?” he dashes off and finds it himself. When it drops into the pool, he paces anxiously at the edge, looking at me like, “Help me fish it out so we can keep playing!” Classic border collie genius.  
