@@ -11,7 +11,7 @@ One of Abby’s ears folds down, which makes her look perpetually wronged. She a
 
 """
     },
-    "Athena": {
+    "athena": {
         "en": """
 <b>Athena</b> is a senior Siamese who boarded with her Chihuahua roommate Dobby. Their human teaches biochem at Pomona (if I remember right). Athena stayed about five days: three under the bed, then on day four she came out for head rubs. That’s pretty normal — older cats often need time to adjust.  
 Even though Athena and Dobby live together, they basically ignore each other. Her coat is very full and floofy, though the texture is a little coarse rather than silky.
@@ -22,7 +22,7 @@ Even though Athena and Dobby live together, they basically ignore each other. He
             Athena的毛特别多特别炸，不过手感一般，有点儿粗糙，不是特别顺滑的那种。
 """
     },
-    "Bella": {
+    "bella": {
         "en": """
 <b>Bella</b> visited for less than eight hours — a quick daytime drop-off because the fire alarm at home was going to blare during repairs and her owner didn’t want to stress their senior girl.  
 First impression: a lovely calico. But wow, there was a massive mat — the kind you could almost lift her by (not that we would). Realistically it needed scissors; no brush would fix that.
@@ -33,7 +33,7 @@ First impression: a lovely calico. But wow, there was a massive mat — the kind
 
 """
     },
-    "Boba": {
+    "boba": {
         "en": """
 <b>Boba</b> is the biggest cat I’ve ever hosted! My two “large” cats suddenly looked petite next to him. He has a Ragdoll face but is actually a Siamese — very solid, heavy in the arms.  
 He’s as smart as a small dog and understands a lot. If my doorknobs weren’t round, I’m sure he’d open doors. His favorite hobby is testing every handle in the house — the more doors, the better. His preferred hangout is the hallway by the bedroom doors.  
@@ -45,7 +45,7 @@ Boba loves chicken jerky, but too much and he’ll get picky about meals. His gr
 Boba最喜欢吃的就是鸡胸肉干了，但是不能喂太多因为吃多了他就会挑食然后不吃饭！！boba打招呼的方式也是很新奇，人类走过他的时候他就喜欢站起来拿手拍一下你，所以没事儿就要给他剪剪指甲......不然拍我的时候他再抠两下子直接就抠到肉了！！
 """
     },
-    "Bruce": {
+    "bruce": {
        "en": """
 <b>Bruce</b> — full name Bruce Wayne — is a short-haired lilac-point Siamese and the one I miss most from the Abby/Mimi/Bruce trio. He and Mimi are littermates, but he’s much bigger — partly because he’s a boy, partly because he “helps” finish Mimi’s food.  
 He’s very people-oriented: call him and he gallops over, and in the morning he head-butts you awake (that bare noggin hurts!). He also muscle-blocks other cats when I’m petting them, and I’ve caught him pinning poor Mimi and rabbit-kicking her more than once.
@@ -58,7 +58,7 @@ He’s very people-oriented: call him and he gallops over, and in the morning he
             然后也经常抓到他霸凌Mimi，把人家骑在下面用脚踹。
 """
     },
-    "Bubble": {
+    "bubble": {
         "en": """
 <b>Bubble</b> (BaBao) came with his bestie Rocket for a 5-plus-month stay while their human went abroad. He’s an American shorthair with markings a lot like my ZhouZhou, just half the size.  
 His greeting ritual: nose-to-nose sniffs with me or any cat, a deep inhale, then a satisfied stroll away. He and Rocket are incredibly harmonious and spend ages grooming each other back and forth.  
@@ -71,7 +71,7 @@ Bubble’s brave — he explored on day one and didn’t hide, even meowing arou
 
 """
     },
-    "Chewy": {
+    "chewy": {
         "en": """
 <b>Chewy</b> hi.
 """,
@@ -79,7 +79,7 @@ Bubble’s brave — he explored on day one and didn’t hide, even meowing arou
 <b>Chewy</b> hi
 """
     },
-    "Clarice": {
+    "clarice": {
         "en": """
 <b>Clarice</b> is a long-haired calico who did a daycare “trial” to see how she’d handle new environments before a long trip. She passed with flying colors — straight out of the carrier to explore, no hiding, no stress. Looks like travel will suit her just fine.
 """,
@@ -89,7 +89,7 @@ Bubble’s brave — he explored on day one and didn’t hide, even meowing arou
 
 """
     },
-    "Delia": {
+    "delia": {
         "en": """
 <b>Delia</b> was my second Rover drop-in client. I accepted back when I took almost anything — then learned she’d moved farther away, making each round trip over an hour.  
 She’s extremely friendly with people… and her claws are extremely sharp. Even the lightest happy knead left a new scratch every visit. She didn’t mean it; she just loves to stomp over for cuddles.
@@ -100,7 +100,7 @@ She’s extremely friendly with people… and her claws are extremely sharp. Eve
 
 """
     },
-    "Dio": {
+    "dio": {
        "en": """
 <b>Dio</b> is special — an asthmatic kitty with a very expressive “mustached” face that makes him look like a tiny Japanese gentleman. It was my first time administering inhaler therapy to a cat: one puff of a human inhaler, cup over nose and mouth, count ten breaths — nightly routine.  
 Thankfully he cooperates for meds. The rest of the time he’s a stealth ninja, hiding under blankets with only his head poking out to watch me.
@@ -111,7 +111,7 @@ Thankfully he cooperates for meds. The rest of the time he’s a stealth ninja, 
 
 """
     },
-    "Django": {
+    "django": {
         "en": """
 <b>Django</b> is the gentlest black cat I’ve hosted. Many black cats I’ve met (especially from non-Asian owners) have been spicy; I once had one puff up inside the carrier before I even opened it. I prepped calming spray just in case.  
 Django was calm and dignified. I even played bird videos on the iPad; he sat quietly and “watched.” He loves the window view — very poetic — though impossible to photograph well because he’s so sleek and dark.
@@ -122,7 +122,7 @@ Django was calm and dignified. I even played bird videos on the iPad; he sat qui
 
 """
     },
-    "Draco": {
+    "draco": {
         "en": """
 <b>Draco</b> belongs to a trio with calico sister Indigo and Chihuahua brother Migo. Typical black cat: standoffish at first and not into being held — until bribed with a few Churu sticks, then we’re friends.  
 He doesn’t seem to like his little sister much; if she comes close he hisses. (I’m guessing the home introduction wasn’t ideal.) Getting Draco back into his carrier at pickup always takes strategy and treats — force is a no-go with this guy.
@@ -133,7 +133,7 @@ He doesn’t seem to like his little sister much; if she comes close he hisses. 
 
 """
     },
-    "Gigi": {
+    "gigi": {
        "en": """
 <b>Gigi</b> is a stunning silver shaded queen with blue eyes — and perpetual eye gunk. Her human says she used to be very clingy before “little brother” Tobi arrived; after a long trip away and then adding Tobi, she became far more independent.  
 She’s still easy to win over, especially if you’re eating human food. When I drink milk she comes to sniff like she’s about to dip a paw in. Early on she liked hiding under the covers with just her head peeking out. She tolerates Tobi and will even eat nose-to-nose with him, though I never saw mutual grooming.
@@ -144,7 +144,7 @@ She’s still easy to win over, especially if you’re eating human food. When I
 
 """
     },
-    "Indigo": {
+    "indigo": {
         "en": """
 <b>Indigo</b> is a six-month-old calico who’s tiny for her age and curious about everything. She explored immediately and is wonderfully handleable — just razor-sharp claws.  
 Her obsession is hair ties, and she reliably fetches them back — a rare cat who truly “retrieves.” Big brother Draco bullies her sometimes; if she wins the wand toy, he’ll scold her. Not ideal, but siblings will sibling.
@@ -155,7 +155,7 @@ Her obsession is hair ties, and she reliably fetches them back — a rare cat wh
 
 """
     },
-    "Ivy": {
+    "ivy": {
        "en": """
 <b>Ivy</b> is the household Snow White — a shelter-adopted gray girl with four dog brothers (who didn’t come to board). Her family wanted her to socialize more with cats, so she visited while several friendly cats and a cat-safe dog were here.  
 Mission accomplished: she bonded especially well with our big cat Tora. Her only naughty habit was sneaking sips from the toilet — I caught her more than once and started closing the bathroom door.
@@ -166,7 +166,7 @@ Mission accomplished: she bonded especially well with our big cat Tora. Her only
 
 """
     },
-    "Joey": {
+    "joey": {
         "en": """
 <b>Joey</b> is a foster fail in progress — adoption events kept falling through, so his kind foster mom has raised him from a few months old to over a year. She still brought him for four days because she didn’t want him alone.  
 He’s super social — a short-haired tabby who came out of the carrier within minutes and loafed with tucked paws like he owned the place. Shelter cats really do seem fearless. He purrs instantly and eats anything. People here love black and tuxedo cats; tabbies get overlooked — I hope this sweet boy finds a forever home soon.
@@ -176,7 +176,7 @@ He’s super social — a short-haired tabby who came out of the carrier within 
 他根本就是一只超级社会化的短毛梨花哥，在航空箱里带了几分钟就自己慢慢悠悠出来了，出来就揣着个手手在那边窝着，一点都没有害怕的意思。确实目前接过从shelter出来的猫猫一个个胆子都超大，感觉天不怕地不怕的。他也是摸一摸就呼噜呼噜叫，喂啥吃啥嘛嘛香。可能就是外国人都喜欢黑猫奶牛猫，对梨花没有很爱吧～希望这小子能早日被领养回家！
 """
     },
-    "Lily": {
+    "lily": {
          "en": """
 <b>Lily</b> is Noel’s littermate — they were adopted together and look nearly identical. Both are shy, but Lily is extra timid.  
 She stayed a full month and still refused to leave “her” room. If I coaxed her out and closed the door, she’d scratch to go back to her safe zone. Sometimes I’d let big sister Tora visit for company… which mostly resulted in Tora finishing Lily’s food. Their humans are friends, so Lily and Tora had met before!
@@ -187,7 +187,7 @@ She stayed a full month and still refused to leave “her” room. If I coaxed h
 
 """
     },
-    "Mars": {
+    "mars": {
        "en": """
 <b>Mars</b> is an adopted orange boy with big-tom potential — he eats everything with gusto and came back noticeably rounder.  
 He loves riding on my shoulders; if I bend down he’ll leap onto my back, so nail trims are frequent to save my skin.  
@@ -200,7 +200,7 @@ His human planned to take him home overseas for winter break but couldn’t fini
 
 """
     },
-    "Marty": {
+    "marty": {
         "en": """
 <b>Marty</b> arrived mid-move — his owners were frazzled, said he keeps darting outside and getting filthy, and asked if I could bathe him. So bath day it was! He grumbled the whole time but didn’t fight or bolt.  
 Afterward we found a number of fresh scratches — likely from outdoor scuffles. At home he’s actually quite good: naps on blankets and meows politely when he wants out.  
@@ -213,7 +213,7 @@ He showed up with almost nothing but a carrier, which made me worry about possib
 
 """
     },
-    "Melody": {
+    "melody": {
        "en": """
 <b>Melody</b> is a tiny shelter-adopted kitten and a world-class people cat — cries for company and plays great with others. Favorite bed: my laundry basket, so my clothes became cat-glittered.  
 She’s darling and squeaky-voiced. Her meals are all wet food; her owner dropped off a backpack full of cans. Our middle cat Gogo, who usually ignores girl cats, was smitten and tried flirting constantly — a true miracle.
@@ -225,7 +225,7 @@ She’s darling and squeaky-voiced. Her meals are all wet food; her owner droppe
 
 """
     },
-    "Mia": {
+    "mia": {
        "en": """
 <b>Mia</b> is a classic brown tabby American shorthair — my first hosting a tiger-stripe like my own boy when he was young. Instant favorite!  
 She arrived spicy, hissing at unfamiliar smells even without other cats around. After a few days she settled into sneaky-peek mode — hiding in the closet and poking her head out when I called, then retreating if it wasn’t for something she wanted.  
@@ -237,7 +237,7 @@ She has strong boundaries: don’t force cuddles when she’s not in the mood or
 总而言之是一只很有性格的咪，她不想让你抱的时候不能强行抱她，不然她就会凶你。想跟你互动的时候她就喵喵喵超级乖过来蹭你，她一定要是主动的那个，所以得由着她。
 """
     },
-    "Milo1": {
+    "milo1": {
        "en": """
 <b>Milo</b> stayed just two days while his place was being renovated. Day one he was extremely reactive to the other-cat scents — hissed whenever I moved and looked ready to pounce on my ankles.  
 His owner said it was his first boarding; at home he’s cuddly. He spent the first day half-hidden under the cabinet, body half out to keep an eye on me.  
@@ -251,7 +251,7 @@ By night he relaxed enough to sprawl on the bed (still hands-off). On day two he
 
 """
     },
-    "Mimi": {
+    "mimi": {
          "en": """
 <b>Mimi</b> is the little sister, Bruce’s identical-twin littermate but darker in color. Their human is an elderly Japanese doctor who wrote me such a long backstory in his first Rover message that I thought it was a scam — all history, no logistics!  
 We met at the neighborhood Starbucks; he arrived with two giant airline carriers holding Bruce and Mimi and spent an hour proudly telling me their stories and names. His love for them is obvious.  
@@ -266,7 +266,7 @@ He’s wonderfully old-school: pays by weekly mailed checks (no Zelle), and even
 
 """
     },
-    "Moomoo": {
+    "moomoo": {
         "en": """
 <b>Moomoo</b> is a senior (ten-plus) who got drop-in care while his family spent over a month in Taiwan. They live nearby, so I visited four times a week. He’s had urinary issues, so I fed a half can of urinary wet food each visit — later reduced to a quarter when he started gaining weight.  
 The moment the garage opened he’d be at the door waiting, head-butting me like we were long-lost friends. It was shedding season, so I always left wearing a different color than I arrived.  
@@ -280,7 +280,7 @@ His quirk: mid-pet love nibbles. Not hard enough to break skin, but enough to �
 
 """
     },
-    "Nacho": {
+    "nacho": {
        "en": """
 <b>Nacho</b> is a sunny orange boy, bolder than his sister Oreo. He burst out of the carrier and immediately started mischief — batting things off tables and swatting the curtain. He and Oreo adored big brother Noel and turned into his bed-buddies.  
 Noel became the ringleader… and occasionally stole their wet food. Their human vacationed in Hawaii and sent me photos the whole time. At pickup she laughed that they’d grown so much — kittens change weekly!
@@ -292,7 +292,7 @@ Noel became the ringleader… and occasionally stole their wet food. Their human
 
 """
     },
-    "Noel": {
+    "noel": {
        "en": """
 <b>Noel</b> is a rescue kitten adopted with his littermate Lily. Day one he hid under the cabinet until lights-out, then snuck out to eat and poop. In the middle of the night he jumped on my bed and meowed for ages, pawing at me.  
 He stayed over two months and integrated beautifully with resident cats Jojo and Gogo — communal meals, treats, litter time, tons of adorable photos. Then stress suddenly hit and he developed urinary blockage symptoms, so we isolated him and did urinary wet food and meds. He recovered fully before going home.
@@ -303,7 +303,7 @@ Noel来了蛮久的，两个多月，期间和家里的Jojo
             Gogo可谓是玩成一片，很好的融入了大家庭。在大厅一起吃饭拉屎吃零食。还拍了很多超可爱的照片！他们处得挺好的，不过突然有一天他压力上来了开始尿闭.....然后就被隔离开吃了好多天的利尿罐头和药，走之前痊愈了。
 """
     },
-    "Nyxey": {
+    "nyxey": {
         "en": """
 <b>Nyxey</b> is a tiny drop-in client kept mostly in the primary bedroom because the house is huge and she disappears. The closet is a full kitty playground.  
 At our meet-and-greet she was balancing on the upstairs stair-rail, wobbling dangerously — and fell before we could reach her. Thankfully, cats bounce; she got up and trotted off like nothing happened.  
@@ -317,7 +317,7 @@ She’s the youngest in a four-pet home with three dog siblings. On my visits th
 
 """
     },
-    "Oreo": {
+    "oreo": {
         "en": """
 <b>Oreo</b> is the tiny white baby of the pair (Americans do love literal names—her brother is the orange boy, Nacho). Their humans found the two kittens in the yard with no mom in sight and took them in. At only two months old, they’re the youngest I’ve ever hosted.  
 Kittens = endless energy, so their owners sent a playpen for nighttime. I *thought* I could let them free-roam… rookie mistake. They sleep 5 minutes, party 2 hours.  
@@ -329,7 +329,7 @@ Oreo arrived shy and would even hiss when I reached for her—an empty bluff. I 
             这两个小登西，晚上不睡觉，上蹿下跳的跑酷。睡觉5分钟，玩闹2小时。奥利奥刚来的时候非常害羞，我伸手去抱她她还会哈我，不过是无效哈气，我还是抱到了。
 """
     },
-    "Pico": {
+    "pico": {
         "en": """
 <b>Pico</b> is a Bengal mix—look at him from the back for full “tiger cape” energy; from the front he’s a perfect good boy. Once he warms up, he’s wonderfully affectionate and clingy.  
 Day 1 he hissed at everything; Day 2 he was parkouring; a few days later he was confidently socializing. His parents are considering a second cat, so they wanted him to practice with others. Mission accomplished: he’ll hiss on first sight, then relax and play chase once he senses friendliness.  
@@ -341,7 +341,7 @@ Here he idolized big brother Noel—nose boops, following everywhere. Sometimes 
 在ee这里小pico认识了大哥Noel！后来每次出来就跟在大哥后面，一整个小跟屁虫。然后就跟大哥闻鼻子贴贴，真的就是很亲很亲！有时候pico手欠欠的，别人不想和他玩他就凑过去扒拉人家两下。以后希望不要欺负家里的弟弟～
 """
     },
-    "Pika": {
+    "pika": {
         "en": """
 <b>Pika</b> is the five-year-old brother in Yoyo’s family. He seemed braver than Yoyo at first, but he’s actually a mellow, contemplative boy whose hobbies are floor and bed meditation. With wand toys he’ll give a few polite swats, then retire.  
 He’s picky with wet food (useful for the Australia weight limit—no risk of overeating). The brothers are inseparable and never fight.  
@@ -353,7 +353,7 @@ pika比较挑食，不是什么罐头都吃🥫所以虽然去🇦🇺要限制�
 不过小pika比较不喜欢坐车🚗去医院做检查之前都尽量不要喝水吃饭不然会拉得航空箱到处都是.....是有一点儿晕车的宝宝🍼不过好在驱虫做检查都很乖～没有让医生难办！祝乖宝在澳洲过上神仙日子！
 """
     },
-    "Riceball": {
+    "riceball": {
         "en": """
 <b>Riceball</b> stayed with Milk Tea (their humans are friends). The cats, however, are *not*—they can’t share a room and will even “argue” themselves into poopy chaos.  
 Riceball is an intact Ragdoll boy: very people-oriented and chatty. If you reach toward him while playing, he rolls over to offer his belly, then may throw in a cheeky love-nip. With other cats he’s neutral — not a fighter, not a playmate.  
@@ -365,19 +365,19 @@ At first he was confusing: he’d come rub my legs, but if I petted him he’d n
 
 """
     },
-    "Rocket": {
+    "rocket": {
         "en": """
 <b>Rocket</b> grew up with his best friend Bubble under the same roof—Rocket was adopted, Bubble was purchased—and their bromance is strong. Constant mutual grooming, unlike my two macho boys who hiss if they sit too close.  
 Rocket is the livelier one: always plotting something, on the fridge, on the table, paw hovering over a glass. His left eye tears easily, so that side gets extra eye gunk.  
 He once had urinary issues from low water intake; now he plays with water and drinks while splashing, which his humans love. He also used to shred apartment carpet… thankfully my place has very little to ruin.
 """,
         "zh": """
-<b>Rocket</b>是和Bubble八宝在一个屋檐下长大的好兄弟。Rocket是领养的，Bubble是买的。他们俩感情可好了，经常能看到互相舔毛，不像家里的俩猛男凑太近就互哈。
+<b>rocket</b>是和Bubble八宝在一个屋檐下长大的好兄弟。Rocket是领养的，Bubble是买的。他们俩感情可好了，经常能看到互相舔毛，不像家里的俩猛男凑太近就互哈。
             Rocket和Bubble相比更加活泼。他经常鬼鬼祟祟的不知道想干些什么坏事儿，要么在冰箱上，要么在桌子上准备把手伸进杯子里。Rocket的左眼总是流眼泪，所以哪只眼睛眼屎特别多。
             听他们的主人说，Rocket小时候喝水少尿闭过，现在的他特别喜欢玩水，一边玩一边喝，主人表示很欣慰。听说Rocket以前总是干坏事儿，把公寓的地毯都抓了个稀烂哈哈哈，还好我家没什么地毯给他抓。
 """
     },
-    "Sophie": {
+    "sophie": {
         "en": """
 <b>Sophie</b> was my very first Rover job—simple weekend drop-ins to open a can and refresh water. Their complex teems with free-roaming cats; I counted six just in the parking lot.  
 Her young owners even said I could let Sophie onto the balcony for fresh air and promised she wouldn’t run (bold request!).  
@@ -389,7 +389,7 @@ At home she loves a little ball and actually retrieves. I toss it upstairs; she 
             搜飞在家的时候很喜欢玩一个小球球，还会巡回，我给他扔到二楼她就扑通扑通跑上去捡来给我。
 """
     },
-    "Tobi": {
+    "tobi": {
         "en": """
 <b>Tobi</b> is the golden shaded little brother to Gigi—goofy, carefree, and sweet. They’d just moved from Atlanta to LA mid-move, so the pair stayed with me. Wet food twice a day; dry on free-feed.  
 Tobi arrived mid–hairball season. At first I blamed Gigi for the pukes, but the culprit was Tobi—lots of fur for such a youngster! We cleared him out and added pumpkin and probiotics; he was back to bouncy in no time.
@@ -401,7 +401,7 @@ Tobi arrived mid–hairball season. At first I blamed Gigi for the pukes, but th
 
 """
     },
-    "Tora": {
+    "tora": {
          "en": """
 <b>Tora</b> is my longest-term guest so far—about five months—referred by Noel’s mom while her student human studied elsewhere. She’s a dream Maine Coon: iron stomach (steals everyone’s kibble, never gets diarrhea), dog-level smarts (answers when called), and maximum affection (sleeps on my head, grooms my hair, kneads my forehead).  
 She looks a bit stern but is pure sugar. If I’m out all day, she waddles over scolding me in her raspy voice and rubs like crazy.  
