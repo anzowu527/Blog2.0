@@ -661,87 +661,6 @@ def ec_sunburst(labels, values, title_text):
     }
 
 
-def _true_five_num(values, log_safe=True):
-    """True five-number summary: min, Q1, median, Q3, max (no outlier capping)."""
-    import numpy as np
-    arr = []
-    for v in values or []:
-        try:
-            f = float(v)
-            if np.isfinite(f) and (f > 0 if log_safe else True):
-                arr.append(f)
-        except Exception:
-            pass
-    arr = np.asarray(arr, dtype=float)
-    n = arr.size
-    if n == 0:
-        return None
-    if n == 1:
-        v = float(arr[0])
-        return {"min": v, "q1": v, "med": v, "q3": v, "max": v, "n": 1}
-
-    q1  = float(np.percentile(arr, 25))
-    med = float(np.percentile(arr, 50))
-    q3  = float(np.percentile(arr, 75))
-    return {"min": float(arr.min()), "q1": q1, "med": med, "q3": q3, "max": float(arr.max()), "n": n}
-
-def render_summary_table_2cats(dog_stats, cat_stats,
-                               *, is_currency=False, unit="",
-                               pad_left=56, pad_right=16,
-                               dog_label="🐶 Dog", cat_label="🐱 Cat"):
-    def fmt(v):
-        if v is None: return "—"
-        return f"${v:,.0f}" if is_currency else f"{v:,.0f}{(' ' + unit) if unit else ''}"
-    def get(s, k): return fmt(s.get(k)) if s else "—"
-    def get_n(s):  return (s or {}).get("n", 0)
-
-    html = f"""
-    <style>
-    .ks-mini2 table, .ks-mini2 td, .ks-mini2 th {{ border: none; }}
-    .ks-mini2 th {{ font-weight: 600; text-align: center; padding: 4px 6px; }}
-    .ks-mini2 td {{ text-align: center; padding: 3px 8px; }}
-    .ks-mini2 td.stat {{ font-weight: 600; opacity:.85; }}
-    .ks-mini2 tr:nth-child(odd):not(.median) td {{ background: rgba(0,0,0,0.025); border-radius: 6px; }}
-    .ks-mini2 tr.median td {{ font-weight: 700; }}
-
-    /* phone: pull wrapper to the left, reduce font a bit, left-align labels */
-    @media (max-width: 720px){{
-      .ks-wrap {{ padding-left: 8px !important; padding-right: 8px !important; }}
-      .ks-mini2 td.stat {{ text-align: left; padding-left: 2px; }}
-      .ks-mini2 th, .ks-mini2 td {{ font-size: 12px; }}
-      .ks-mini2 table {{ margin-left: 0 !important; width: 100% !important; table-layout: fixed; }}
-    }}
-    </style>
-
-    <div class="ks-wrap" style="padding-left:{pad_left}px;padding-right:{pad_right}px;">
-      <div class="ks-mini2">
-        <table style="width:100%; border-collapse:separate; border-spacing:0 4px;">
-          <colgroup>
-            <col style="width:100px" />
-            <col /><col />
-          </colgroup>
-          <thead>
-            <tr>
-              <th></th>
-              <th>{dog_label}</th>
-              <th>{cat_label}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td class="stat">n</td><td>{get_n(dog_stats)}</td><td>{get_n(cat_stats)}</td></tr>
-            <tr><td class="stat">min</td><td>{get(dog_stats,"min")}</td><td>{get(cat_stats,"min")}</td></tr>
-            <tr><td class="stat">Q1</td><td>{get(dog_stats,"q1")}</td><td>{get(cat_stats,"q1")}</td></tr>
-            <tr class="median"><td class="stat">median</td><td>{get(dog_stats,"med")}</td><td>{get(cat_stats,"med")}</td></tr>
-            <tr><td class="stat">Q3</td><td>{get(dog_stats,"q3")}</td><td>{get(cat_stats,"q3")}</td></tr>
-            <tr><td class="stat">max</td><td>{get(dog_stats,"max")}</td><td>{get(cat_stats,"max")}</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-    """
-    st.markdown(html, unsafe_allow_html=True)
-
-
 def ec_box_species_platform_4cats(
     title_text: str,
     rover_dog_vals, xhs_dog_vals,
@@ -1255,14 +1174,6 @@ def main():
         "grid": {"top": 8, "right": 8, "bottom": 12, "left": 8}
     }
 
-    MOBILE_CARTESIAN = {
-        "title": {"top": 0, "textStyle": {"fontSize": 12}},
-        "grid": {"left": 8, "right": 8, "top": 24, "bottom": 24, "containLabel": True},
-        "xAxis": {"axisLabel": {"fontSize": 10, "rotate": 0, "margin": 4}},  # ← no rotate
-        "yAxis": {"axisLabel": {"fontSize": 10, "margin": 4}},
-        # NOTE: no "series" override here → preserves your original boxplot colors/borders/widths
-    }
-
     MOBILE_BAR = {
         "title": {"textStyle": {"fontSize": 12}},
         "grid": {"left": 8, "right": 8, "top": 24, "bottom": 24, "containLabel": True},
@@ -1347,7 +1258,6 @@ def main():
 
     # chart height presets (feel free to tweak)
     H_DONUT = "320px"
-    H_BOX   = "300px"
     H_BAR   = "300px"
 
     # --- top spacing / title ---
@@ -1425,90 +1335,6 @@ def main():
             height=H_DONUT,
             renderer="svg",
         )
-
-    st.markdown("---")
-
-    # ---------- Boarding Price & Duration Distributions ----------
-    st.subheader("Boarding Price & Duration Distributions (log scale)")
-    df = exclude_dropins(df)
-
-    c1, _, c3 = st.columns([1, 0.1, 1])
-
-    dur_col   = get_first_existing(df, ["Duration", "Nights", "Days"])
-    rate_col  = get_first_existing(df, ["daily price", "DailyPrice", "Rate", "Price/Day", "Price Per Day"])
-    plat_col  = get_channel_col(df)
-
-    # Duration (days) split by Platform
-    with c1:
-        if dur_col and plat_col:
-            x = df[[dur_col, plat_col, "__SpeciesNorm__"]].copy()
-            x = exclude_dropins(x)
-            x[dur_col] = pd.to_numeric(x[dur_col], errors="coerce")
-            x = x[np.isfinite(x[dur_col]) & (x[dur_col] > 0)]
-            x["__plat__"] = x[plat_col].apply(normalize_platform)
-
-            rover_dog = x.loc[(x["__plat__"] == "Rover") & (x["__SpeciesNorm__"] == "Dog"), dur_col].astype(float).tolist()
-            xhs_dog   = x.loc[(x["__plat__"] == "XHS")   & (x["__SpeciesNorm__"] == "Dog"), dur_col].astype(float).tolist()
-            rover_cat = x.loc[(x["__plat__"] == "Rover") & (x["__SpeciesNorm__"] == "Cat"), dur_col].astype(float).tolist()
-            xhs_cat   = x.loc[(x["__plat__"] == "XHS")   & (x["__SpeciesNorm__"] == "Cat"), dur_col].astype(float).tolist()
-
-            st_echarts(
-                make_responsive(
-                    ec_box_species_platform_4cats(
-                        "Duration (days) — Boarding only",
-                        rover_dog, xhs_dog, rover_cat, xhs_cat,
-                        is_currency=False, y_label="days", log_scale=True
-                    ),
-                    MOBILE_CARTESIAN,
-                ),
-                height=H_BOX,
-                renderer="svg",
-            )
-
-            dr_stats = _true_five_num(rover_dog or [], log_safe=True)
-            dx_stats = _true_five_num(xhs_dog   or [], log_safe=True)
-            cr_stats = _true_five_num(rover_cat or [], log_safe=True)
-            cx_stats = _true_five_num(xhs_cat   or [], log_safe=True)
-            render_summary_table_4cats(
-                dr_stats, dx_stats, cr_stats, cx_stats,
-                is_currency=False, unit="days", pad_left=56, pad_right=16
-            )
-
-    # Daily price split by Platform
-    with c3:
-        if rate_col and plat_col:
-            x = df[[rate_col, plat_col, "__SpeciesNorm__"]].copy()
-            x = exclude_dropins(x)
-            x[rate_col] = _clean_money_like(x[rate_col])
-            x = x[np.isfinite(x[rate_col]) & (x[rate_col] > 0)]
-            x["__plat__"] = x[plat_col].apply(normalize_platform)
-
-            rover_dog = x.loc[(x["__plat__"] == "Rover") & (x["__SpeciesNorm__"] == "Dog"), rate_col].astype(float).tolist()
-            xhs_dog   = x.loc[(x["__plat__"] == "XHS")   & (x["__SpeciesNorm__"] == "Dog"), rate_col].astype(float).tolist()
-            rover_cat = x.loc[(x["__plat__"] == "Rover") & (x["__SpeciesNorm__"] == "Cat"), rate_col].astype(float).tolist()
-            xhs_cat   = x.loc[(x["__plat__"] == "XHS")   & (x["__SpeciesNorm__"] == "Cat"), rate_col].astype(float).tolist()
-
-            st_echarts(
-                make_responsive(
-                    ec_box_species_platform_4cats(
-                        "Daily price — Boarding only",
-                        rover_dog, xhs_dog, rover_cat, xhs_cat,
-                        is_currency=True, log_scale=True
-                    ),
-                    MOBILE_CARTESIAN,
-                ),
-                height=H_BOX,
-                renderer="svg",
-            )
-
-            dr_stats = _true_five_num(rover_dog or [], log_safe=True)
-            dx_stats = _true_five_num(xhs_dog   or [], log_safe=True)
-            cr_stats = _true_five_num(rover_cat or [], log_safe=True)
-            cx_stats = _true_five_num(xhs_cat   or [], log_safe=True)
-            render_summary_table_4cats(
-                dr_stats, dx_stats, cr_stats, cx_stats,
-                is_currency=True, pad_left=56, pad_right=16
-            )
 
     st.markdown("---")
 

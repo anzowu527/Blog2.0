@@ -11,6 +11,7 @@ from datetime import datetime, timedelta, date
 from image_config import BASE_IMAGE_URL
 from get_s3_images import _safe_join_url, _placeholder_for
 from image_config import BASE_IMAGE_URL
+import os
 
 # ---- S3 avatar config ----
 AVATAR_ROOT = "images/avatar/"  # s3://annablog/images/avatar/<lower-name>.webp
@@ -471,6 +472,267 @@ def build_premium_clients_rfmD(df: pd.DataFrame, title="Top Clients by Visit Fre
             use_container_width=True
         )
 
+# ---------- tiny utils (copied from Kingdom_Stats) ----------
+def read_df_safe(path: str) -> pd.DataFrame:
+    if not os.path.exists(path):
+        return pd.DataFrame()
+    try:
+        return pd.read_csv(path)
+    except Exception:
+        return pd.DataFrame()
+
+def get_first_existing(df: pd.DataFrame, options):
+    return next((c for c in options if c in df.columns), None)
+
+def normalize_platform(val: str) -> str:
+    if pd.isna(val): return "Other"
+    s = str(val).strip().lower()
+    if s in {"xhs", "小红书", "redbook", "little red book"}:
+        return "XHS"
+    if s in {"rover"}:
+        return "Rover"
+    return s.title()
+
+def _clean_money_like(series: pd.Series) -> pd.Series:
+    return (
+        series.astype(str)
+              .str.replace(r"[\$,]", "", regex=True)
+              .str.strip()
+              .replace({"": None})
+              .pipe(pd.to_numeric, errors="coerce")
+    )
+
+def get_channel_col(df: pd.DataFrame):
+    return get_first_existing(df, ["Platform", "Source", "Channel"])
+
+def get_service_col(df: pd.DataFrame):
+    return get_first_existing(df, ["Type"])
+
+def exclude_dropins(df: pd.DataFrame) -> pd.DataFrame:
+    svc_col = get_service_col(df)
+    if not svc_col:
+        return df
+    svc = df[svc_col].astype(str).str.lower()
+    return df[~svc.str.contains("drop", na=False)].copy()
+
+def normalize_species(val) -> str:
+    if pd.isna(val): return "Unknown"
+    s = str(val).strip().lower()
+    if s in {"dog", "dogs", "canine"}: return "Dog"
+    if s in {"cat", "cats", "feline"}: return "Cat"
+    return "Unknown"
+
+def coerce_dates(df: pd.DataFrame) -> pd.DataFrame:
+    for col in ["Arrival Date", "Arrival", "Check-in", "Check In", "Start Date"]:
+        if col in df.columns:
+            df[col] = pd.to_datetime(df[col], errors="coerce")
+    for col in ["Departure Date", "Departure", "Check-out", "Check Out", "End Date"]:
+        if col in df.columns:
+            df[col] = pd.to_datetime(df[col], errors="coerce")
+    return df
+
+# ---------- chart builders (copied intact) ----------
+def _true_five_num(values, log_safe=True):
+    arr = []
+    for v in values or []:
+        try:
+            f = float(v)
+            if np.isfinite(f) and (f > 0 if log_safe else True):
+                arr.append(f)
+        except Exception:
+            pass
+    arr = np.asarray(arr, dtype=float)
+    n = arr.size
+    if n == 0:
+        return None
+    if n == 1:
+        v = float(arr[0])
+        return {"min": v, "q1": v, "med": v, "q3": v, "max": v, "n": 1}
+    q1  = float(np.percentile(arr, 25))
+    med = float(np.percentile(arr, 50))
+    q3  = float(np.percentile(arr, 75))
+    return {"min": float(arr.min()), "q1": q1, "med": med, "q3": q3, "max": float(arr.max()), "n": n}
+
+def render_summary_table_4cats(dr_stats, dx_stats, cr_stats, cx_stats,
+                               *, is_currency=False, unit="",
+                               pad_left=56, pad_right=16):
+    def fmt(v):
+        if v is None: return "—"
+        return f"${v:,.0f}" if is_currency else f"{v:,.0f}{(' ' + unit) if unit else ''}"
+    def get(s, key):   return fmt(s.get(key)) if s else "—"
+    def get_n(s):      return (s or {}).get("n", 0)
+
+    headers = ["🐶 Rover", "🐶 XHS", "🐱 Rover", "🐱 XHS"]
+
+    html = f"""
+    <style>
+    .ks-mini table, .ks-mini td, .ks-mini th {{ border: none; }}
+    .ks-mini th {{ font-weight: 600; text-align: center; padding: 4px 6px; }}
+    .ks-mini td.stat {{ font-weight: 600; text-align: left; opacity:.85; padding: 3px 6px; }}
+    .ks-mini td.val  {{ text-align: center; padding: 3px 8px; }}
+    .ks-mini tr:nth-child(odd):not(.median) td.val {{ background: rgba(0,0,0,0.025); border-radius: 6px; }}
+    .ks-mini tr.median td.val {{ font-weight: 700; }}
+    @media (max-width: 720px){{
+      .ks-wrap {{ padding-left: 8px !important; padding-right: 8px !important; }}
+      .ks-mini th, .ks-mini td {{ font-size: 12px; }}
+      .ks-mini table {{ margin-left: 0 !important; width: 100% !important; table-layout: fixed; }}
+      .ks-mini td.stat {{ padding-left: 2px; }}
+    }}
+    </style>
+    <div class="ks-wrap" style="padding-left:{pad_left}px;padding-right:{pad_right}px;">
+      <div class="ks-mini">
+        <table style="width:100%; border-collapse:separate; border-spacing:0 4px;">
+          <colgroup>
+            <col style="width:100px" />
+            <col /><col /><col /><col />
+          </colgroup>
+          <thead>
+            <tr>
+              <th></th>
+              <th>{headers[0]}</th>
+              <th>{headers[1]}</th>
+              <th>{headers[2]}</th>
+              <th>{headers[3]}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="stat">n</td>
+              <td class="val">{get_n(dr_stats)}</td>
+              <td class="val">{get_n(dx_stats)}</td>
+              <td class="val">{get_n(cr_stats)}</td>
+              <td class="val">{get_n(cx_stats)}</td></tr>
+            <tr><td class="stat">min</td>
+              <td class="val">{get(dr_stats,"min")}</td>
+              <td class="val">{get(dx_stats,"min")}</td>
+              <td class="val">{get(cr_stats,"min")}</td>
+              <td class="val">{get(cx_stats,"min")}</td></tr>
+            <tr><td class="stat">Q1</td>
+              <td class="val">{get(dr_stats,"q1")}</td>
+              <td class="val">{get(dx_stats,"q1")}</td>
+              <td class="val">{get(cr_stats,"q1")}</td>
+              <td class="val">{get(cx_stats,"q1")}</td></tr>
+            <tr class="median"><td class="stat">median</td>
+              <td class="val">{get(dr_stats,"med")}</td>
+              <td class="val">{get(dx_stats,"med")}</td>
+              <td class="val">{get(cr_stats,"med")}</td>
+              <td class="val">{get(cx_stats,"med")}</td></tr>
+            <tr><td class="stat">Q3</td>
+              <td class="val">{get(dr_stats,"q3")}</td>
+              <td class="val">{get(dx_stats,"q3")}</td>
+              <td class="val">{get(cr_stats,"q3")}</td>
+              <td class="val">{get(cx_stats,"q3")}</td></tr>
+            <tr><td class="stat">max</td>
+              <td class="val">{get(dr_stats,"max")}</td>
+              <td class="val">{get(dx_stats,"max")}</td>
+              <td class="val">{get(cr_stats,"max")}</td>
+              <td class="val">{get(cx_stats,"max")}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+
+def ec_box_species_platform_4cats(
+    title_text: str,
+    rover_dog_vals, xhs_dog_vals,
+    rover_cat_vals, xhs_cat_vals,
+    *, is_currency=False, y_label="", log_scale=True
+):
+    def tukey_box_and_outliers(vals):
+        arr = []
+        for v in vals or []:
+            try:
+                f = float(v)
+                if np.isfinite(f) and f > 0:
+                    arr.append(f)
+            except Exception:
+                pass
+        arr = np.asarray(arr, dtype=float)
+        if arr.size == 0:
+            return None, []
+        if arr.size == 1:
+            v = float(arr[0]); return [v, v, v, v, v], []
+        q1 = float(np.percentile(arr, 25))
+        q2 = float(np.percentile(arr, 50))
+        q3 = float(np.percentile(arr, 75))
+        iqr = q3 - q1
+        low  = max(float(arr.min()), q1 - 1.5 * iqr)
+        high = min(float(arr.max()), q3 + 1.5 * iqr)
+        outs = arr[(arr < low) | (arr > high)].tolist()
+        return [round(low,4), round(q1,4), round(q2,4), round(q3,4), round(high,4)], outs
+
+    boxes, outs = [], []
+    vals_list = [
+        ("Dog", "Rover", rover_dog_vals),
+        ("Dog", "XHS",   xhs_dog_vals),
+        ("Cat", "Rover", rover_cat_vals),
+        ("Cat", "XHS",   xhs_cat_vals),
+    ]
+    for i, (_, _, v) in enumerate(vals_list):
+        b, o = tukey_box_and_outliers(v)
+        boxes.append(b)
+        outs += [[i, float(y)] for y in o]
+
+    categories = ["Dog", "Dog", "Cat", "Cat"]
+    y_axis = {"type": "log", "logBase": 10, "axisLabel": {"margin": 4}} if log_scale else \
+             {"type": "value", "min": 0, "axisLabel": {"margin": 4}}
+    if is_currency:
+        y_axis["axisLabel"]["formatter"] = "${value}"
+    elif y_label:
+        y_axis["axisLabel"]["formatter"] = "{value} " + y_label
+
+    BROWN = "#5a3b2e"
+    option = {
+        "title": {"text": f"{title_text}", "left": "center", "top": 8,
+                  "textStyle": {"fontSize": 12, "color": BROWN}},
+        "tooltip": {"show": False},
+        "legend": {"show": True, "bottom": 0, "data": ["Rover", "XHS"],
+                   "textStyle": {"color": BROWN}},
+        "grid": {"left": 56, "right": 16, "top": 36, "bottom": 40, "containLabel": True},
+        "xAxis": {"type": "category", "data": categories, "axisTick": {"show": False},
+                  "axisLabel": {"margin": 6}},
+        "yAxis": y_axis,
+        "series": [
+            {
+                "name": "Boxes",
+                "type": "boxplot",
+                "data": [{"value": boxes[i]} if boxes[i] else None for i in range(4)],
+                "boxWidth": [16, 44],
+                "itemStyle": {"borderColor": BROWN, "borderWidth": 1.8},
+                "emphasis": {"itemStyle": {"borderColor": BROWN, "borderWidth": 2.2}},
+                "z": 2,
+            },
+            {"name": "Rover", "type": "scatter", "data": [], "itemStyle": {"color": "#8b5e3c"}},
+            {"name": "XHS",   "type": "scatter", "data": [], "itemStyle": {"color": "#f4cbba"}},
+        ],
+        "animationDuration": 900, "animationEasing": "cubicOut",
+    }
+    if outs:
+        option["series"].append({
+            "name": "Outliers", "type": "scatter", "data": outs,
+            "symbolSize": 7, "itemStyle": {"color": BROWN}, "z": 3,
+        })
+    if not any(boxes):
+        option["graphic"] = [{
+            "type": "text", "left": "center", "top": "middle",
+            "style": {"text": "No data", "fontSize": 12, "fill": BROWN}
+        }]
+    return option
+
+# ---------- responsive helpers just for this page ----------
+def make_responsive(option: dict, mobile_option: dict, max_width: int = 720) -> dict:
+    return {"baseOption": option, "media": [{"query": {"maxWidth": max_width}, "option": mobile_option}]}
+
+MOBILE_CARTESIAN = {
+    "title": {"top": 0, "textStyle": {"fontSize": 12}},
+    "grid": {"left": 8, "right": 8, "top": 24, "bottom": 24, "containLabel": True},
+    "xAxis": {"axisLabel": {"fontSize": 10, "rotate": 0, "margin": 4}},
+    "yAxis": {"axisLabel": {"fontSize": 10, "margin": 4}},
+}
+
+H_BOX = "300px"
+
 def main():
     st.set_page_config(page_title="📈 Kingdom Revenue", layout="wide")
 
@@ -929,7 +1191,101 @@ def main():
     except Exception as e:
         st.warning(f"Could not render daily operation charts: {e}")
 
+    st.header("Boarding Price & Duration Distributions (log scale)")
+    DATA_PATH = "data/combined.csv"
 
+    df = read_df_safe(DATA_PATH)
+    if df.empty:
+        st.info("No data yet. Add bookings to see distributions.")
+        return
+
+    name_col = get_first_existing(df, ["Name", "Pet Name", "Pet"])
+    species_col = get_first_existing(df, ["Species", "Type", "Category", "Kind"])
+    plat_col  = get_channel_col(df)
+
+    if not name_col or not species_col or not plat_col:
+        st.warning("Missing required columns: Name/Pet, Species, and Platform/Source/Channel.")
+        return
+
+    # normalize & filter
+    df = coerce_dates(df)
+    df["__SpeciesNorm__"] = df[species_col].apply(normalize_species)
+    df = exclude_dropins(df)
+
+    dur_col  = get_first_existing(df, ["Duration", "Nights", "Days"])
+    rate_col = get_first_existing(df, ["daily price", "DailyPrice", "Rate", "Price/Day", "Price Per Day"])
+
+    c1, _, c3 = st.columns([1, 0.1, 1])
+
+    # ----- Duration (days) split by Platform -----
+    with c1:
+        if dur_col:
+            x = df[[dur_col, plat_col, "__SpeciesNorm__"]].copy()
+            x[dur_col] = pd.to_numeric(x[dur_col], errors="coerce")
+            x = x[np.isfinite(x[dur_col]) & (x[dur_col] > 0)]
+            x["__plat__"] = x[plat_col].apply(normalize_platform)
+
+            rover_dog = x.loc[(x["__plat__"] == "Rover") & (x["__SpeciesNorm__"] == "Dog"), dur_col].astype(float).tolist()
+            xhs_dog   = x.loc[(x["__plat__"] == "XHS")   & (x["__SpeciesNorm__"] == "Dog"), dur_col].astype(float).tolist()
+            rover_cat = x.loc[(x["__plat__"] == "Rover") & (x["__SpeciesNorm__"] == "Cat"), dur_col].astype(float).tolist()
+            xhs_cat   = x.loc[(x["__plat__"] == "XHS")   & (x["__SpeciesNorm__"] == "Cat"), dur_col].astype(float).tolist()
+
+            st.subheader("Duration (days) — Boarding only")
+            st_echarts(
+                make_responsive(
+                    ec_box_species_platform_4cats(
+                        "Duration (days) — Boarding only",
+                        rover_dog, xhs_dog, rover_cat, xhs_cat,
+                        is_currency=False, y_label="days", log_scale=True
+                    ),
+                    MOBILE_CARTESIAN,
+                ),
+                height=H_BOX, renderer="svg",
+            )
+
+            dr_stats = _true_five_num(rover_dog or [], log_safe=True)
+            dx_stats = _true_five_num(xhs_dog   or [], log_safe=True)
+            cr_stats = _true_five_num(rover_cat or [], log_safe=True)
+            cx_stats = _true_five_num(xhs_cat   or [], log_safe=True)
+            render_summary_table_4cats(
+                dr_stats, dx_stats, cr_stats, cx_stats,
+                is_currency=False, unit="days", pad_left=56, pad_right=16
+            )
+
+    # ----- Daily price split by Platform -----
+    with c3:
+        if rate_col:
+            x = df[[rate_col, plat_col, "__SpeciesNorm__"]].copy()
+            x[rate_col] = _clean_money_like(x[rate_col])
+            x = x[np.isfinite(x[rate_col]) & (x[rate_col] > 0)]
+            x["__plat__"] = x[plat_col].apply(normalize_platform)
+
+            rover_dog = x.loc[(x["__plat__"] == "Rover") & (x["__SpeciesNorm__"] == "Dog"), rate_col].astype(float).tolist()
+            xhs_dog   = x.loc[(x["__plat__"] == "XHS")   & (x["__SpeciesNorm__"] == "Dog"), rate_col].astype(float).tolist()
+            rover_cat = x.loc[(x["__plat__"] == "Rover") & (x["__SpeciesNorm__"] == "Cat"), rate_col].astype(float).tolist()
+            xhs_cat   = x.loc[(x["__plat__"] == "XHS")   & (x["__SpeciesNorm__"] == "Cat"), rate_col].astype(float).tolist()
+
+            st.subheader("Daily price — Boarding only")
+            st_echarts(
+                make_responsive(
+                    ec_box_species_platform_4cats(
+                        "Daily price — Boarding only",
+                        rover_dog, xhs_dog, rover_cat, xhs_cat,
+                        is_currency=True, log_scale=True
+                    ),
+                    MOBILE_CARTESIAN,
+                ),
+                height=H_BOX, renderer="svg",
+            )
+
+            dr_stats = _true_five_num(rover_dog or [], log_safe=True)
+            dx_stats = _true_five_num(xhs_dog   or [], log_safe=True)
+            cr_stats = _true_five_num(rover_cat or [], log_safe=True)
+            cx_stats = _true_five_num(xhs_cat   or [], log_safe=True)
+            render_summary_table_4cats(
+                dr_stats, dx_stats, cr_stats, cx_stats,
+                is_currency=True, pad_left=56, pad_right=16
+            )
 
 if __name__ == "__main__":
     main()
