@@ -308,16 +308,16 @@ def main():
             "orders": [("Longest first", False), ("Shortest first", True)],
             "metric": "nights",
         },
-        "Average Daily Price": {
-            "col": "AvgDailyPrice",
-            "orders": [("Highest first", False), ("Lowest first", True)],
-            "metric": "avg_price",
-        },
-        "First Visit date": {
-            "col": "FirstVisit",
-            "orders": [("Newest first", False), ("Oldest first", True)],
-            "metric": None,
-        },
+        #"Average Daily Price": {
+        #    "col": "AvgDailyPrice",
+        #    "orders": [("Highest first", False), ("Lowest first", True)],
+        #    "metric": "avg_price",
+        #},
+        #"First Visit date": {
+        #    "col": "FirstVisit",
+        #    "orders": [("Newest first", False), ("Oldest first", True)],
+        #    "metric": None,
+        #},
     }
 
     sort_choice = st.selectbox("Sort by", list(sort_config.keys()), index=0)
